@@ -32,6 +32,7 @@ jobs:
           npm run dist -- --mac --arm64
         env:
           CI: true
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Build Windows binary with x64 architecture
       - name: Build binaries (Windows)
@@ -41,6 +42,7 @@ jobs:
           npm run dist -- --win --x64
         env:
           CI: true
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Upload artifacts for later release step
       - name: Upload build artifacts
