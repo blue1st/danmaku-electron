@@ -44,12 +44,22 @@ jobs:
           CI: true
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Upload artifacts for later release step
-      - name: Upload build artifacts
+      # Upload artifacts for later release step – OS 別に適切なファイルだけを対象とする
+      - name: Upload macOS artifact
+        if: matrix.os == 'macos'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-artifacts
-          path: dist/*
+          name: macos-artifacts
+          # macOS では dmg のみをアップロード
+          path: dist/*.dmg
+
+      - name: Upload Windows artifact
+        if: matrix.os == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          # Setup 用 exe のみをアップロード（blockmap 等は除外）
+          path: dist/*Setup*.exe
 
   release:
     needs: build
