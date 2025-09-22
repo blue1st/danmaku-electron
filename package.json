@@ -1,0 +1,35 @@
+{
+  "name": "danmaku-electron",
+  "version": "1.0.0",
+  "build": {
+    "appId": "com.example.danmaku",
+    "mac": {
+      "target": ["dmg"]
+    },
+    "win": {
+      "target": [{
+        "target": "nsis",
+        "arch": ["x64"]
+      }]
+    },
+    "directories": {
+      "output": "dist"
+    }
+  },
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dist": "electron-builder -mw"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Danmaku Electron アプリ（タスクトレイ駐在・前面表示・透過ウィンドウ・テキスト横流し）",
+  "devDependencies": {
+    "electron": "^38.1.2",
+    "electron-builder": "^24.6.3"
+  }
+,
+  "files": ["main.js", "index.html", "tray.png"]
+}

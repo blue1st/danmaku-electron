@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Danmaku</title>
+  <style>
+    body { margin:0; overflow:hidden; background:transparent; }
+    /* 薄い外枠 */
+    #wrapper {
+      position:absolute;
+      top:0; left:0;
+      width:100%; height:100%;
+      border:1px solid rgba(255,255,255,0.3);
+      box-sizing:border-box;
+    }
+    .comment {
+      position:absolute;
+      white-space:nowrap;
+      font-size:72px;               /* 3倍に拡大 */
+      color:#fff;
+      animation: scroll-left 16s linear forwards; /* 速度を半分（時間2倍） */
+    }
+    @keyframes scroll-left {
+      from { left:100%; }
+      to   { left:-100%; }
+    }
+  </style>
+</head>
+  <body>
+    <div id="wrapper">
+      <div id="marquee"></div>
+    </div>
+  <script>
+    const fs = require('fs');
+    const path = require('path');
+
+    // 設定ファイルからコメント行を読み込む (1 行が 1 コメント)
+    let commentLines = [];
+    try {
+      const data = fs.readFileSync(path.join(__dirname, 'comments.txt'), { encoding: 'utf8' });
+      commentLines = data.split(/\r?\n/).filter(l => l.trim().length > 0);
+    } catch (e) {
+      console.error('コメントファイル読み込み失敗:', e);
+    }
+
+    // ランダムなコメントを画面に表示する関数
+    function showRandomComment() {
+      if (commentLines.length === 0) return;
+      const text = commentLines[Math.floor(Math.random() * commentLines.length)];
+      const el = document.createElement('div');
+      el.className = 'comment';
+      el.textContent = text;
+      // ランダムな縦位置 (画面上部から80%まで)
+      const maxY = window.innerHeight * 0.8;
+      const yPos = Math.random() * maxY;
+      el.style.top = `${yPos}px`;
+      document.body.appendChild(el);
+      // アニメーション終了後に要素を削除
+      el.addEventListener('animationend', () => {
+        el.remove();
+      });
+    }
+
+    // 次のコメント表示までランダム秒数でスケジュール
+    function scheduleNext() {
+      const delay = 2000 + Math.random() * 5000; // 2〜7 秒
+      setTimeout(() => {
+        showRandomComment();
+        scheduleNext();
+      }, delay);
+    }
+
+    // 初回開始
+    scheduleNext();
+  </script>
+  </body>
+</html>

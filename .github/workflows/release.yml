@@ -1,0 +1,69 @@
+name: Build & Release Electron App
+
+on:
+  push:
+    tags:
+      - 'v*'   # タグが v で始まるとき実行 (例: v1.0.0)
+
+jobs:
+  build:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        os: [macos, windows]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Build for the current OS (macOS or Windows)
+      - name: Build binaries
+        if: matrix.os == 'macos'
+        run: |
+          npm run dist -- -m mac
+        env:
+          CI: true
+
+      - name: Build binaries (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          npm run dist -- -w win
+        env:
+          CI: true
+
+      # Upload artifacts for later release step
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-artifacts
+          path: dist/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: ./release-assets
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: ./release-assets/*
+
