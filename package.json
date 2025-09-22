@@ -4,6 +4,7 @@
   "build": {
     "appId": "com.example.danmaku",
     "mac": {
+      "identity": null,
       "target": ["dmg"]
     },
     "win": {
