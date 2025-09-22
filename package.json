@@ -20,7 +20,9 @@
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dist": "electron-builder -mw"
+    // `dist` スクリプトは引数でビルド対象を指定できるようにし、
+    // CI では `npm run dist -- -m mac` の形で mac 用ビルドを実行します。
+    "dist": "electron-builder"
   },
   "keywords": [],
   "author": "",

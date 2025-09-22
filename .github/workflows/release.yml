@@ -25,18 +25,20 @@ jobs:
         run: npm ci
 
       # Build for the current OS (macOS or Windows)
-      - name: Build binaries
+      # Build macOS binary with arm64 architecture
+      - name: Build binaries (macOS)
         if: matrix.os == 'macos'
         run: |
-          npm run dist -- -m mac
+          npm run dist -- --mac --arm64
         env:
           CI: true
 
+      # Build Windows binary with x64 architecture
       - name: Build binaries (Windows)
         if: matrix.os == 'windows'
         shell: pwsh
         run: |
-          npm run dist -- -w win
+          npm run dist -- --win --x64
         env:
           CI: true
 
@@ -66,4 +68,3 @@ jobs:
           draft: false
           prerelease: false
           files: ./release-assets/*
-
