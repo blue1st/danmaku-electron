@@ -187,8 +187,10 @@
       };
     }
 
-    const currentCharacter = generateCharacter();
-    console.log("Current Character:", currentCharacter.profile);
+    const CHARACTER_COUNT = 6;
+    const activeCharacters = Array.from({ length: CHARACTER_COUNT }, () => generateCharacter());
+    let lastSentCharacter = activeCharacters[0];
+    console.log("Active Characters:", activeCharacters.map(c => c.name));
 
     const { ipcRenderer } = require('electron');
 
@@ -251,14 +253,21 @@
           const statusEl = document.getElementById('load-status');
           if (statusEl) {
             statusEl.style.color = '#00d2ff';
-            statusEl.textContent = `今回の実況：${currentCharacter.name}`;
+            statusEl.textContent = "参加メンバーを表示中...";
+            
+            setTimeout(() => {
+              statusEl.textContent = activeCharacters.map(c => c.name).join('、');
+              statusEl.style.fontSize = '12px';
+              statusEl.style.whiteSpace = 'normal';
+              statusEl.style.height = 'auto';
+            }, 1000);
           }
           
           setTimeout(() => {
             splash.classList.add('hidden');
-          }, 3000);
+          }, 5000);
 
-          showComment("システム", `${currentCharacter.name}がログインしました。`);
+          showComment("システム", `${activeCharacters.length}人のメンバーがログインしました。`);
 
           // リソースの衝突を避けるために少し待機してからキャプチャ開始
           setTimeout(() => {
@@ -277,7 +286,7 @@
             commentHistory.push(text);
             if (commentHistory.length > MAX_HISTORY) commentHistory.shift();
           }
-          showComment(currentCharacter.name, text);
+          showComment(lastSentCharacter.name, text);
         } else if (type === 'error') {
           isProcessing = false;
           if (inferenceTimeout) clearTimeout(inferenceTimeout);
@@ -290,7 +299,7 @@
 
           // 推論中のエラーであれば、当たり障りないコメントを出す
           const text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
-          showComment(currentCharacter.name, text);
+          showComment(lastSentCharacter.name, text);
           updateStatus(`AIエラー: ${error}`);
           console.warn('Fallback due to worker error:', error);
         }
@@ -299,7 +308,8 @@
     }
 
     function showComment(name, text) {
-      const fullText = `${text}`;
+      const isSystem = name === "システム" || name === "エラー";
+      const fullText = isSystem ? text : `${name}「${text}」`;
       const el = document.createElement('div');
       el.className = 'comment';
       el.textContent = fullText;
@@ -356,7 +366,7 @@
                 updateStatus('AI応答タイムアウト（リセット中）');
                 document.getElementById('status').textContent = 'AI Status: Timeout/Reset';
                 document.getElementById('status').textContent = 'AI Status: Timeout/Reset';
-                showComment(currentCharacter.name, "...ちょっと考えすぎちゃった。");
+                showComment(lastSentCharacter.name, "...ちょっと考えすぎちゃった。");
               }
             }, 40000); // 40秒くらいまで待つ（GPU負荷を考慮）
 
@@ -381,12 +391,15 @@
               ? "現在の画面に何が映っているか、口語調で短く説明してください。"
               : `${basePrompt} 説明は不要です。リアクションや心の声をお願いします。`;
 
+            // ランダムにキャラクターを選択
+            lastSentCharacter = activeCharacters[Math.floor(Math.random() * activeCharacters.length)];
+
             worker.postMessage({
               type: 'generate',
               payload: {
                 images: snapshots,
                 promptText: promptText,
-                characterProfile: currentCharacter.profile,
+                characterProfile: lastSentCharacter.profile,
                 history: commentHistory
               }
             }, snapshots);
