@@ -44,7 +44,8 @@
   "files": [
     "main.js",
     "index.html",
-    "tray.png"
+    "tray.png",
+    "assets/icon.png"
   ],
   "dependencies": {
     "@huggingface/transformers": "^4.1.0"

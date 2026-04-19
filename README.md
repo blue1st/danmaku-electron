@@ -1,5 +1,10 @@
 # Danmaku Electron (Gemma Live)
 
+<p align="center">
+  <img src="assets/icon.png" width="200" height="200" alt="Danmaku Electron Icon">
+</p>
+
+
 ## 概要
 デスクトップ画面をAIがリアルタイムに実況・状況解説する、弾幕風デスクトップ常駐アプリです。
 最先端のマルチモーダルAI「Gemma 4」を WebGPU を活用して端末ローカルで動作させ、画面キャプチャに基づいた生々しいリアクションを画面上にオーバーレイ表示します。
