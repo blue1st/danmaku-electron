@@ -38,6 +38,18 @@ cask "danmaku-electron" do
 
   app "danmaku-electron.app"
 
+  # Only support Apple Silicon (based on release assets)
+  depends_on arch: :arm64
+
+  postflight do
+    system_command "/usr/bin/xattr",
+                   args: ["-dr", "com.apple.quarantine", "#{appdir}/danmaku-electron.app"],
+                   sudo: false
+    system_command "/usr/bin/codesign",
+                   args: ["--force", "--deep", "--sign", "-", "#{appdir}/danmaku-electron.app"],
+                   sudo: false
+  end
+
   zap trash: [
     "~/Library/Application Support/danmaku-electron",
     "~/Library/Preferences/com.example.danmaku.plist",
