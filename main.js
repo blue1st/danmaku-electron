@@ -1,8 +1,24 @@
-const { app, BrowserWindow, Tray, Menu, screen, session, desktopCapturer } = require('electron');
+const { app, BrowserWindow, Tray, Menu, screen, session, desktopCapturer, ipcMain } = require('electron');
 const path = require('path');
 
 let mainWin;
 let tray;
+let currentStatus = '初期化中...';
+
+function updateTrayMenu() {
+  if (!tray) return;
+
+  const contextMenu = Menu.buildFromTemplate([
+    { label: `ステータス: ${currentStatus}`, enabled: false },
+    { type: 'separator' },
+    { label: '表示/非表示', click: () => {
+      if (mainWin.isVisible()) mainWin.hide(); else mainWin.show();
+    }},
+    { type: 'separator' },
+    { role: 'quit' }
+  ]);
+  tray.setContextMenu(contextMenu);
+}
 
 function createWindow() {
   // ディスプレイサイズに合わせてウインドウを大きく設定
@@ -49,16 +65,20 @@ app.whenReady().then(() => {
   createWindow();
 
   try {
-    tray = new Tray(path.join(__dirname, 'tray.png'));
-    const contextMenu = Menu.buildFromTemplate([
-      { label: '表示/非表示', click: () => {
-        if (mainWin.isVisible()) mainWin.hide(); else mainWin.show();
-      }},
-      { type: 'separator' },
-      { role: 'quit' }
-    ]);
+    const { nativeImage } = require('electron');
+    let icon = nativeImage.createFromPath(path.join(__dirname, 'tray.png'));
+    icon = icon.resize({ width: 22, height: 22 });
+    if (process.platform === 'darwin') {
+      icon.setTemplateImage(true);
+    }
+    tray = new Tray(icon);
     tray.setToolTip('Danmaku Electron');
-    tray.setContextMenu(contextMenu);
+    updateTrayMenu();
+
+    ipcMain.on('update-status', (event, status) => {
+      currentStatus = status;
+      updateTrayMenu();
+    });
 
     tray.on('click', () => {
       if (mainWin.isVisible()) mainWin.hide(); else mainWin.show();

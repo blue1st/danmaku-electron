@@ -118,6 +118,11 @@
     </div>
   <script>
     const characters = ["暇人A", "通りすがりのAI", "デスクトップ監視員", "Gemma-chan", "匿名希望", "名無し", "キャプチャ愛好家"];
+    const { ipcRenderer } = require('electron');
+
+    function updateStatus(text) {
+        ipcRenderer.send('update-status', text);
+    }
 
     let worker = null;
     let isReady = false;
@@ -143,17 +148,20 @@
                     statusEl.textContent = `Loaded: ${payload.file}`;
                 } else if (payload.status === 'status') {
                     statusEl.textContent = payload.text;
+                    updateStatus(payload.text);
                 }
             } else if (type === 'ready') {
                 isReady = true;
                 console.log('AI System Ready');
                 document.getElementById('status').textContent = 'AI System Active';
+                updateStatus('AIアクティブ（解析中）');
                 const splash = document.getElementById('splash');
                 splash.classList.add('hidden');
                 
                 showComment("システム", "AI解析の準備が整いました。実況を開始します！");
                 startCapture(); // ここで開始
             } else if (type === 'result') {
+                updateStatus('AIアクティブ（解析中）');
                 const char = characters[Math.floor(Math.random() * characters.length)];
                 showComment(char, payload.text);
             } else if (type === 'error') {
@@ -220,6 +228,7 @@
                     // workerに送るために一時的にバッファを空にするか、コピーを送る
                     // AGENTS.md に従い transferable として送る
                     const snapshots = framesToProcess.map(b => b); 
+                    updateStatus('実況考案中...');
                     worker.postMessage({
                         type: 'generate',
                         payload: {
