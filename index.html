@@ -204,10 +204,10 @@
     });
 
     ipcRenderer.on('init-config', (event, config) => {
-      const modelId = config.modelType === 'E4B' 
-        ? 'onnx-community/gemma-4-E4B-it-ONNX' 
+      const modelId = config.modelType === 'E4B'
+        ? 'onnx-community/gemma-4-E4B-it-ONNX'
         : 'onnx-community/gemma-4-E2B-it-ONNX';
-      
+
       const sizeText = config.modelType === 'E4B' ? '約4GB' : '約2GB';
       const instructionEl = document.querySelector('.instruction p:nth-child(2)');
       if (instructionEl) {
@@ -302,8 +302,8 @@
           if (!text || text.length < 2) {
             text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
           } else {
-            // 履歴に追加
-            commentHistory.push(text);
+            // 履歴に追加 (発言者も含める)
+            commentHistory.push(`${lastSentCharacter.name}: ${text}`);
             if (commentHistory.length > MAX_HISTORY) commentHistory.shift();
           }
           showComment(lastSentCharacter.name, text);
@@ -401,14 +401,23 @@
               "画面から読み取れる状況に対して、一言ボヤいてください。",
               "今の画面の状態を、あなたなりの視点で評価してください。",
               "画面の中で一番目立っているものについて、何か言ってください。",
-              "この画面を見て、ふと思ったことを口に出してください。"
+              "この画面を見て、ふと思ったことを口に出してください。",
+              "画面に映っている具体的なものについて触れてください"
             ];
             const basePrompt = promptVariations[Math.floor(Math.random() * promptVariations.length)];
 
-            const isDescription = Math.random() < 0.05;
-            const promptText = isDescription
-              ? "現在の画面に何が映っているか、口語調で短く説明してください。"
-              : `${basePrompt} 説明は不要です。リアクションや心の声をお願いします。`;
+            const isDescription = Math.random() < 0.1;
+            const isResponse = !isDescription && commentHistory.length > 0 && Math.random() < 0.2;
+
+            let promptText;
+            if (isDescription) {
+              promptText = "現在の画面に何が映っているか、口語調で短く説明してください。";
+            } else if (isResponse) {
+              const targetComment = commentHistory[Math.floor(Math.random() * commentHistory.length)];
+              promptText = `直前のコメント「${targetComment}」に対して、あなたのキャラになりきってレスポンス（返信やツッコミ）をしてください。画面の内容も踏まえてOKです。`;
+            } else {
+              promptText = `${basePrompt} 説明は不要です。リアクションや心の声をお願いします。`;
+            }
 
             // ランダムにキャラクターを選択
             lastSentCharacter = activeCharacters[Math.floor(Math.random() * activeCharacters.length)];

@@ -98,7 +98,7 @@ self.onmessage = async (e) => {
 【指令】: ${promptText}`;
 
             if (history && history.length > 0) {
-                fullPrompt += `\n\n（※過去のあなたの発言履歴：${history.join('、')}。これらとは違う新しい表現を使ってください）`;
+                fullPrompt += `\n\n（※最近のチャット履歴：${history.join('、')}。これらを踏まえつつ、違う新しい表現を使ってください）`;
             }
 
             const content = images.map(() => ({ type: 'image' }));
