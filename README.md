@@ -28,8 +28,18 @@
 - **Node.js**: v18 以上
 
 ## インストール手順
+
+### Homebrew (macOS)
 ```bash
-git clone <リポジトリURL>
+brew install blue1st/taps/danmaku-electron
+```
+
+### Windows
+GitHub の [Releases](https://github.com/blue1st/danmaku-electron/releases) ページから最新の `.exe` インストーラーをダウンロードして実行してください。
+
+### ソースコードから
+```bash
+git clone https://github.com/blue1st/danmaku-electron.git
 cd danmaku-electron
 npm install
 ```
