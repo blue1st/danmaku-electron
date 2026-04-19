@@ -13,16 +13,26 @@ let tray;
 let currentStatus = '初期化中...';
 
 function updateTrayMenu() {
-  if (!tray) return;
+  if (!tray || !mainWin) return;
 
+  const isVisible = mainWin.isVisible();
   const contextMenu = Menu.buildFromTemplate([
     { label: `ステータス: ${currentStatus}`, enabled: false },
     { type: 'separator' },
-    { label: '表示/非表示', click: () => {
-      if (mainWin.isVisible()) mainWin.hide(); else mainWin.show();
-    }},
+    {
+      label: '画面を表示',
+      type: 'checkbox',
+      checked: isVisible,
+      click: () => {
+        if (isVisible) {
+          mainWin.hide();
+        } else {
+          mainWin.show();
+        }
+      }
+    },
     { type: 'separator' },
-    { role: 'quit' }
+    { label: '終了', role: 'quit' }
   ]);
   tray.setContextMenu(contextMenu);
 }
@@ -66,6 +76,9 @@ function createWindow() {
       mainWin.setIgnoreMouseEvents(true, { forward: true });
     }
   });
+
+  mainWin.on('show', updateTrayMenu);
+  mainWin.on('hide', updateTrayMenu);
 }
 
 app.whenReady().then(() => {

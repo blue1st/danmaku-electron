@@ -65,7 +65,7 @@ self.onmessage = async (e) => {
     if (type === 'init') {
         await init();
     } else if (type === 'generate') {
-        const { images, promptText, history } = payload;
+        const { images, promptText, history, characterProfile } = payload;
         try {
             console.log('Generating comment with', images.length, 'images...');
             
@@ -79,9 +79,15 @@ self.onmessage = async (e) => {
             }));
 
             // チャットテンプレートの構築
-            let fullPrompt = promptText;
+            let fullPrompt = `あなたは以下のキャラクターになりきり、デスクトップ画面のキャプチャを見て独り言やリアクションをしてください。
+必ずキャラクターの設定（口調、性格、今の気分）を反映させ、ありきたりな表現やつまらない説明は避けてください。
+文字数は短く（20文字以内）、そのキャラが言いそうな生々しい一言をお願いします。
+
+【キャラクター設定】: ${characterProfile}
+【指令】: ${promptText}`;
+            
             if (history && history.length > 0) {
-                fullPrompt += `\n（直近のあなたの発言: ${history.join(', ')}）\nこれらとは違う、今の画面に合わせた新しいリアクションをお願いします。`;
+                fullPrompt += `\n\n（※過去のあなたの発言履歴：${history.join('、')}。これらとは違う新しい表現を使ってください）`;
             }
 
             const content = images.map(() => ({ type: 'image' }));
@@ -106,10 +112,11 @@ self.onmessage = async (e) => {
             
             const outputs = await model.generate({
                 ...inputs,
-                max_new_tokens: 32,
+                max_new_tokens: 48,
                 do_sample: true,
-                temperature: 0.7,
-                repetition_penalty: 1.2,
+                temperature: 1.0,
+                top_p: 0.9,
+                repetition_penalty: 1.5,
             });
 
             // プロンプト部分を除去してデコード
