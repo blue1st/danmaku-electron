@@ -302,8 +302,8 @@
           if (!text || text.length < 2) {
             text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
           } else {
-            // 履歴に追加 (発言者も含める)
-            commentHistory.push(`${lastSentCharacter.name}: ${text}`);
+            // 履歴に追加
+            commentHistory.push(text);
             if (commentHistory.length > MAX_HISTORY) commentHistory.shift();
           }
           showComment(lastSentCharacter.name, text);
@@ -402,7 +402,7 @@
               "今の画面の状態を、あなたなりの視点で評価してください。",
               "画面の中で一番目立っているものについて、何か言ってください。",
               "この画面を見て、ふと思ったことを口に出してください。",
-              "画面に映っている具体的なものについて触れてください"
+              "画面に映っている具体的なものについて触れてください。"
             ];
             const basePrompt = promptVariations[Math.floor(Math.random() * promptVariations.length)];
 
