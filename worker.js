@@ -1,3 +1,4 @@
+// WebGPUを有効化するための初期インポート（設定はinit内で行う）
 const {
     env,
     AutoProcessor,
@@ -5,18 +6,29 @@ const {
     RawImage
 } = require('@huggingface/transformers');
 
-// WebGPUを有効化
-env.allowLocalModels = false;
-env.useBrowserCache = true;
-
 let model;
 let processor;
 // 進捗の throttled update 用
 let lastUpdateTime = 0;
 const UPDATE_INTERVAL = 500; // 0.5秒おきにトレイを更新
 
-async function init(customModelId) {
-    const model_id = customModelId || 'onnx-community/gemma-4-E2B-it-ONNX';
+async function init(payload) {
+    const { modelId, userDataPath } = payload;
+    const model_id = modelId || 'onnx-community/gemma-4-E2B-it-ONNX';
+    
+    // 環境設定の初期化
+    env.allowLocalModels = false;
+    env.useBrowserCache = false; // Electronではディスクキャッシュ（userData）を優先
+
+    if (userDataPath) {
+        const path = require('path');
+        const cachePath = path.join(userDataPath, 'models-cache');
+        console.log('Setting cache path:', cachePath);
+        env.cacheDir = cachePath;
+        // Node環境でのローカルパスも一応設定
+        env.localModelPath = cachePath;
+    }
+
     console.log('Loading local model:', model_id);
     try {
         const check = typeof Gemma4ForConditionalGeneration;
@@ -31,11 +43,11 @@ async function init(customModelId) {
             self.postMessage({ type: 'progress', payload: data });
         };
 
-        // Cacheを完全に無効化してネットワークからリトライ
-        env.useBrowserCache = false;
-
         self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 1: Fetching Configs...' } });
-        processor = await AutoProcessor.from_pretrained(model_id, { revision: 'main' });
+        processor = await AutoProcessor.from_pretrained(model_id, { 
+            revision: 'main',
+            progress_callback 
+        });
 
         self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 2: Checking WebGPU...' } });
         if (!navigator.gpu) {
@@ -62,7 +74,7 @@ async function init(customModelId) {
 self.onmessage = async (e) => {
     const { type, payload } = e.data;
     if (type === 'init') {
-        await init(payload?.modelId);
+        await init(payload);
     } else if (type === 'generate') {
         const { images, promptText, history, characterProfile } = payload;
         try {

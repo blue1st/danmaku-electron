@@ -215,9 +215,10 @@
       }
 
       console.log('Initializing with model:', modelId);
-      initWorker(modelId);
+      initWorker(modelId, config.userDataPath);
     });
 
+    let worker;
     let isReady = false;
     let isProcessing = false;
     let inferenceTimeout = null;
@@ -242,7 +243,7 @@
 
     const marquee = document.getElementById('marquee');
 
-    function initWorker(modelId) {
+    function initWorker(modelId, userDataPath) {
       worker = new Worker('worker.js');
       worker.onmessage = (e) => {
         const { type, payload, error } = e.data;
@@ -323,7 +324,7 @@
           console.warn('Fallback due to worker error:', error);
         }
       };
-      worker.postMessage({ type: 'init', payload: { modelId } });
+      worker.postMessage({ type: 'init', payload: { modelId, userDataPath } });
     }
 
     function showComment(name, text) {

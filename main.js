@@ -137,7 +137,10 @@ function createWindow() {
   mainWin.loadFile('index.html');
   
   mainWin.webContents.on('did-finish-load', () => {
-    mainWin.webContents.send('init-config', config);
+    mainWin.webContents.send('init-config', {
+      ...config,
+      userDataPath: app.getPath('userData')
+    });
   });
 
   // ウインドウ内のマウスクリックを透過（背後のウィンドウへ）
