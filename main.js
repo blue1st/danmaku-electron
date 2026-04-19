@@ -16,6 +16,13 @@ function updateTrayMenu() {
   if (!tray || !mainWin) return;
 
   const isVisible = mainWin.isVisible();
+  
+  // ツールチップとタイトル（macOS）で状態を分かりやすく
+  tray.setToolTip(`Danmaku Electron: ${isVisible ? '表示中' : '非表示'} (${currentStatus})`);
+  if (process.platform === 'darwin') {
+    tray.setTitle(isVisible ? ' 表示中' : ' 非表示');
+  }
+
   const contextMenu = Menu.buildFromTemplate([
     { label: `ステータス: ${currentStatus}`, enabled: false },
     { type: 'separator' },
@@ -27,8 +34,10 @@ function updateTrayMenu() {
         if (isVisible) {
           mainWin.hide();
         } else {
-          mainWin.show();
+          // オーバーレイなのでアクティブ化せずに表示
+          mainWin.showInactive();
         }
+        updateTrayMenu();
       }
     },
     { type: 'separator' },
@@ -101,7 +110,12 @@ app.whenReady().then(() => {
     });
 
     tray.on('click', () => {
-      if (mainWin.isVisible()) mainWin.hide(); else mainWin.show();
+      if (mainWin.isVisible()) {
+        mainWin.hide();
+      } else {
+        mainWin.showInactive();
+      }
+      updateTrayMenu();
     });
   } catch (err) {
     console.error('Tray creation failed:', err);
