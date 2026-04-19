@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, screen } = require('electron');
+const { app, BrowserWindow, Tray, Menu, screen, session, desktopCapturer } = require('electron');
 const path = require('path');
 
 let mainWin;
@@ -22,7 +22,17 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
+      backgroundThrottling: false,
+      nodeIntegrationInWorker: true,
     },
+  });
+
+  // 画面キャプチャの権限設定
+  session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+    desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
+      // 最初の画面を選択（自動選択）
+      callback({ video: sources[0] });
+    });
   });
 
   mainWin.loadFile('index.html');
@@ -38,20 +48,24 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
 
-  tray = new Tray(path.join(__dirname, 'tray.png'));
-  const contextMenu = Menu.buildFromTemplate([
-    { label: '表示/非表示', click: () => {
-      if (mainWin.isVisible()) mainWin.hide(); else mainWin.show();
-    }},
-    { type: 'separator' },
-    { role: 'quit' }
-  ]);
-  tray.setToolTip('Danmaku Electron');
-  tray.setContextMenu(contextMenu);
+  try {
+    tray = new Tray(path.join(__dirname, 'tray.png'));
+    const contextMenu = Menu.buildFromTemplate([
+      { label: '表示/非表示', click: () => {
+        if (mainWin.isVisible()) mainWin.hide(); else mainWin.show();
+      }},
+      { type: 'separator' },
+      { role: 'quit' }
+    ]);
+    tray.setToolTip('Danmaku Electron');
+    tray.setContextMenu(contextMenu);
 
-  tray.on('click', () => {
-    if (mainWin.isVisible()) mainWin.hide(); else mainWin.show();
-  });
+    tray.on('click', () => {
+      if (mainWin.isVisible()) mainWin.hide(); else mainWin.show();
+    });
+  } catch (err) {
+    console.error('Tray creation failed:', err);
+  }
 });
 
 app.on('window-all-closed', e => { e.preventDefault(); });

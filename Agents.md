@@ -1,137 +1,107 @@
-# Electron アプリ作成ガイド（タスクトレイ駐在・前面表示・透過ウィンドウ・テキスト横流し）
+## Gemma4モデルのガイドライン
 
-この **Agents.md** は、以下の要件を満たす Electron アプリを構築するための手順とポイントをまとめています。
+基本的な使い方は以下の従う
+* https://huggingface.co/onnx-community/gemma-4-E2B-it-ONNX
+* https://huggingface.co/onnx-community/gemma-4-E4B-it-ONNX
 
-## 📋 要件概要
-- アプリはタスクトレイに常駐し、クリックでウィンドウを表示/非表示できる
-- ウィンドウは他アプリの前面に固定（`alwaysOnTop`）
-- 背景は透過し、裏側のウインドウが見える状態にする
-- 画面上部（または任意位置）で文字列を左から右へ流す（マリオネット風スクロール）
 
-## 🛠️ 前提条件
-- **Node.js** (v18 以上) と **npm** がインストール済み
-- Electron の基本的な知識があること（`main` / `renderer` プロセスの概念）
 
-## 🚀 プロジェクト作成手順
-1. **プロジェクト初期化**
-   ```bash
-   mkdir danmaku-electron && cd $_
-   npm init -y
-   npm i electron@latest --save-dev
-   ```
+## 映像解析のガイドライン
 
-2. **`package.json` のスクリプト追加**
-   ```json
-   "scripts": {
-     "start": "electron ."
-   }
-   ```
+# On-device Multimodal Video Analysis with Transformers.js & Gemma 4
 
-3. **エントリーファイル作成** – `main.js`
-   ```javascript
-   const { app, BrowserWindow, Tray, Menu } = require('electron');
-   const path = require('path');
+このドキュメントでは、`transformers.js` (v4+) と `Gemma 4 E2B/E4B` を使用して、ブラウザ上でローカルに動画解析（マルチモーダル推論）を実装する手法について解説します。
 
-   let mainWin;
-   let tray;
+## 1. 構成概要
 
-   function createWindow() {
-     mainWin = new BrowserWindow({
-       width: 800,
-       height: 100,
-       transparent: true,          // 背景透過
-       frame: false,               // フレーム無し（見た目をシンプルに）
-       alwaysOnTop: true,         // 前面固定
-       skipTaskbar: true,          // タスクバーに表示しない
-       webPreferences: {
-         nodeIntegration: true,
-         contextIsolation: false,
-       },
-     });
+本プロジェクトでは、WebGPU を活用して端末上でリアルタイムに動画フレームを解析します。主なコンポーネントは以下の通りです。
 
-     mainWin.loadFile('index.html');
-     // デバッグ時は devtools を開く（不要なら削除）
-     // mainWin.webContents.openDevTools({ mode: 'detach' });
-   }
+- **Frontend (Main Thread)**: `getUserMedia` を用いた映像キャプチャと、`ImageBitmap` によるフレーム管理。
+- **Worker (Background Thread)**: `@huggingface/transformers` を用いた重い推論処理。
+- **Model**: `Gemma 4` シリーズのマルチモーダルモデル。
 
-   app.whenReady().then(() => {
-     createWindow();
+## 2. 実装のポイント
 
-     // トレイアイコン作成
-     tray = new Tray(path.join(__dirname, 'tray.png'));
-     const contextMenu = Menu.buildFromTemplate([
-       { label: '表示/非表示', click: () => {
-         if (mainWin.isVisible()) mainWin.hide(); else mainWin.show();
-       }},
-       { type: 'separator' },
-       { role: 'quit' }
-     ]);
-     tray.setToolTip('Danmaku Electron');
-     tray.setContextMenu(contextMenu);
+### A. 効率的なフレームキャプチャ (Frontend)
 
-     // クリックでウィンドウの表示切替
-     tray.on('click', () => {
-       if (mainWin.isVisible()) mainWin.hide(); else mainWin.show();
-     });
-   });
+動画を「解析」するために、過去数秒間のフレームを `ImageBitmap` のバッファとして保持します。これにより、推論時に過去のコンテキスト（動きなど）をモデルに伝えることが可能になります。
 
-   app.on('window-all-closed', (e) => { e.preventDefault(); }); // すべて閉じても終了させない
-   ```
+```typescript
+// フレームバッファの構築
+let bitmapBuffer: ImageBitmap[] = [];
+const videoFrameCount = 8; // 解析に使うフレーム数
 
-4. **レンダラ側 HTML/CSS/JS** – `index.html`
-   ```html
-   <!DOCTYPE html>
-   <html lang="ja">
-   <head>
-     <meta charset="UTF-8" />
-     <title>Danmaku</title>
-     <style>
-       body { margin:0; overflow:hidden; background:transparent; }
-       #marquee {
-         position:absolute;
-         white-space:nowrap;
-         font-size:24px;
-         color:#fff;
-         top:50%;
-         transform:translateY(-50%);
-         animation: scroll-left 10s linear infinite;
-       }
-       @keyframes scroll-left {
-         from { left:100%; }
-         to   { left:-100%; }
-       }
-     </style>
-   </head>
-   <body>
-     <div id="marquee">ここに流す文字列を入れます – 例：こんにちは、世界！</div>
-   </body>
-   </html>
-   ```
+async function updateFrameBuffer() {
+  const maxSize = 448; // モデルの入力サイズに合わせてリサイズ（メモリ節約）
+  const bitmap = await captureSingleFrameBitmap({ maxSize });
+  if (bitmap) {
+    bitmapBuffer.push(bitmap);
+    if (bitmapBuffer.length > videoFrameCount) {
+      const old = bitmapBuffer.shift();
+      old?.close(); // メモリを明示的に解放
+    }
+  }
+}
+```
 
-5. **トレイアイコン用画像** を `tray.png`（16×16 推奨）としてプロジェクト直下に配置する。
+### B. Worker へのデータ転送 (Zero-copy)
 
-## 🔧 カスタマイズポイント
-- **ウィンドウサイズ・位置**: `BrowserWindow` の `width/height/x/y` を調整。画面上部に固定したい場合は `y: 0`、左端から開始させたい場合は `x: 0`。
-- **スクロール速度**: CSS アニメーションの `animation-duration`（例では `10s`）を変更する。
-- **文字列更新**: `index.html` の `#marquee` 内容を書き換えるか、Renderer 側で IPC 経由にしてメインプロセスから動的に渡すことが可能。
-- **常に前面表示の解除**: 必要なら `alwaysOnTop: false` に変更し、ウィンドウ表示時だけ `setAlwaysOnTop(true)` を呼び出すロジックを追加。
+`ImageBitmap` は `postMessage` の `transferable` オブジェクトとして転送可能です。これにより、メインスレッドとワーカースレッド間での巨大なピクセルデータのコピーを回避し、パフォーマンスを向上させます。
 
-## 📦 ビルド & 配布
-- **パッケージング** には `electron-builder` または `electron-packager` が便利です。例:
-   ```bash
-   npm i -D electron-builder
-   # package.json に "build" スクリプトを追加
-   "scripts": { "dist": "electron-builder" }
-   npx electron-builder
-   ```
-- `asar` 化やアイコン設定は `electron-builder.yml` で細かく指定できます。
+```typescript
+// メインスレッドから Worker へ送信
+worker.postMessage({
+  type: 'generate',
+  payload: {
+    images: frames, // ImageBitmap[]
+    promptText: "何が映っていますか？"
+  }
+}, frames); // Transferable objects
+```
 
-## 📝 注意点
-1. **透過ウィンドウ** は Windows/macOS の描画方式に依存します。macOS では `transparent: true` と同時に `backgroundColor: '#00000000'` を設定すると安定します。
-2. **タスクトレイ** のアイコンは OS に合わせたサイズが必要です（macOS は `.icns`、Windows は `.ico`）。
-3. **常に前面表示** が不要になるケースではユーザー体験を考慮し、オプションで切り替えられるよう UI を用意すると良いでしょう。
+### C. Worker での画像処理と推論
 
----
+Worker 内では `OffscreenCanvas` を使用して `ImageBitmap` を `RawImage` (Transformers.js の形式) に変換します。
 
-この Agents.md を参考に、`danmaku-electron` ディレクトリ内で手順を実行すれば、要求された機能を持つ Electron アプリが完成します。質問や追加要件があれば遠慮なくどうぞ！
+```typescript
+// Worker内での処理
+const canvas = new OffscreenCanvas(w, h);
+const ctx = canvas.getContext('2d');
+ctx.drawImage(img, 0, 0);
+const imageData = ctx.getImageData(0, 0, w, h);
+const rawImage = new RawImage(new Uint8Array(imageData.data.buffer), w, h, 4);
+```
 
+### D. プロンプト構成と Chat Template
+
+マルチフレーム（動画）解析を行う場合、`<image>` トークンをフレーム数分だけプロンプトに挿入する必要があります。
+
+```typescript
+const imageTag = processor.image_token || '<image>';
+// フレーム数分だけタグを繰り返す
+const placeholders = imageTag.repeat(images.length);
+// プロンプトの先頭（または適切な場所）に挿入
+prompt = prompt.replace(/(<start_of_turn>user\s*)/, `$1\n${placeholders}\n`);
+```
+
+### E. メモリ管理 (GPU Resources)
+
+WebGPU を使用する場合、推論に使用したテンソルを明示的に解放しないと VRAM が枯渇します。`dispose()` メソッドを必ず呼び出すようにします。
+
+```typescript
+try {
+  const inputs = await processor(prompt, images);
+  const outputs = await model.generate({ ...inputs });
+  // ...
+} finally {
+  // テンソルの解放
+  if (inputs) {
+    Object.values(inputs).forEach((t: any) => t?.dispose?.());
+  }
+  if (outputs) outputs.dispose?.();
+}
+```
+
+## 3. トラブルシューティング
+
+- **Out of Memory (OOM)**: モバイルブラウザでは極端に GPU メモリ制限が厳しいため、フレーム数を減らすか、`lowResource` モード（解像度を下げる等）を実装してください。
