@@ -39,7 +39,9 @@
     "electron": "^38.1.2",
     "electron-builder": "^26.8.1",
     "release-it": "^17.10.1",
-    "@release-it/conventional-changelog": "^8.0.2"
+    "@release-it/conventional-changelog": "^8.0.2",
+    "conventional-commits-filter": "^5.0.0",
+    "conventional-commits-parser": "^6.4.0"
   },
   "files": [
     "main.js",
