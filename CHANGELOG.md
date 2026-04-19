@@ -1,5 +1,13 @@
 
 
+# [1.3.0](https://github.com/blue1st/danmaku-electron/compare/v1.2.4...v1.3.0) (2026-04-19)
+
+
+### Features
+
+* add arm64 architecture dependency and postflight quarantine removal to Homebrew script ([24511d5](https://github.com/blue1st/danmaku-electron/commit/24511d55a41c896b4ef2083e7039a231861f446b))
+* pass userDataPath to renderer process via init-config event ([8b981d0](https://github.com/blue1st/danmaku-electron/commit/8b981d0d82f2667308b7a9703641d0e8f264c976))
+
 ## [1.2.4](https://github.com/blue1st/danmaku-electron/compare/v1.2.3...v1.2.4) (2026-04-19)
 
 ## [1.2.3](https://github.com/blue1st/danmaku-electron/compare/v1.2.2...v1.2.3) (2026-04-19)
