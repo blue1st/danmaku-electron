@@ -42,6 +42,17 @@ npm run dist   # electron‑builder が mac と windows の両方を出力しま
 ```
 Windows 用は `dist/` に `DanmakuElectron Setup 1.0.0.exe`（NSIS インストーラ）が生成されます。実行するとインストールウィザードが表示され、任意のフォルダーへインストールできます。
 
+## リリース手順
+`release-it` を使用して、バージョニング、CHANGELOG の更新、Git タグの作成、GitHub リリースの作成を自動化しています。
+
+1. **GitHub Token の設定** (初回のみ):
+   GitHub リリースを自動作成するために、`GITHUB_TOKEN` を環境変数に設定してください。
+2. **リリース実行**:
+   ```bash
+   npm run release
+   ```
+   対話形式でバージョンの選択（patch/minor/major）や GitHub リリースの作成確認が行われます。
+
 ## ファイル構成
 ```
 ├─ main.js          # メインプロセス（ウィンドウ・トレイ設定）

@@ -153,7 +153,23 @@
     <div id="marquee"></div>
   </div>
   <script>
-    const characters = ["暇人A", "通りすがりのAI", "デスクトップ監視員", "Gemma-chan", "匿名希望", "名無し", "キャプチャ愛好家"];
+    const JOBS = ["男子大学生", "女子高生", "マセた小学生", "会社員", "主婦", "プロゲーマー", "AIの妖精", "エンジニア", "隠居した老人"];
+    const PERSONALITIES = ["無気力な", "超ポジティブな", "かなりの毒舌家な", "めちゃくちゃ丁寧な", "常にテンションが高い", "中二病な", "心配性な", "好奇心旺盛な"];
+    const MOODS = ["暇を持て余している", "お腹が空いている", "眠たそうな", "悟りを開いている", "何かを探している", "イライラしている"];
+
+    function generateCharacter() {
+      const job = JOBS[Math.floor(Math.random() * JOBS.length)];
+      const personality = PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
+      const mood = MOODS[Math.floor(Math.random() * MOODS.length)];
+      return {
+        name: `${personality}${job}`,
+        profile: `${personality}${job}。今は${mood}状態。`
+      };
+    }
+
+    const currentCharacter = generateCharacter();
+    console.log("Current Character:", currentCharacter.profile);
+
     const { ipcRenderer } = require('electron');
 
     function updateStatus(text) {
@@ -212,7 +228,7 @@
           const splash = document.getElementById('splash');
           splash.classList.add('hidden');
 
-          showComment("システム", "AI解析の準備が整いました。3秒後に実況を開始します...");
+          showComment("システム", "はじまったwww");
 
           // リソースの衝突を避けるために少し待機してからキャプチャ開始
           setTimeout(() => {
@@ -222,8 +238,8 @@
           isProcessing = false;
           if (inferenceTimeout) clearTimeout(inferenceTimeout);
           updateStatus('AIアクティブ（解析中）');
-          const char = characters[Math.floor(Math.random() * characters.length)];
-
+          updateStatus('AIアクティブ（解析中）');
+          
           let text = payload.text;
           if (!text || text.length < 2) {
             text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
@@ -232,7 +248,7 @@
             commentHistory.push(text);
             if (commentHistory.length > MAX_HISTORY) commentHistory.shift();
           }
-          showComment(char, text);
+          showComment(currentCharacter.name, text);
         } else if (type === 'error') {
           isProcessing = false;
           if (inferenceTimeout) clearTimeout(inferenceTimeout);
@@ -244,9 +260,8 @@
           }
 
           // 推論中のエラーであれば、当たり障りないコメントを出す
-          const char = characters[Math.floor(Math.random() * characters.length)];
           const text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
-          showComment(char, text);
+          showComment(currentCharacter.name, text);
           updateStatus(`AIエラー: ${error}`);
           console.warn('Fallback due to worker error:', error);
         }
@@ -255,7 +270,7 @@
     }
 
     function showComment(name, text) {
-      const fullText = `${name}: ${text}`;
+      const fullText = `${text}`;
       const el = document.createElement('div');
       el.className = 'comment';
       el.textContent = fullText;
@@ -311,8 +326,8 @@
                 isProcessing = false;
                 updateStatus('AI応答タイムアウト（リセット中）');
                 document.getElementById('status').textContent = 'AI Status: Timeout/Reset';
-                const char = characters[Math.floor(Math.random() * characters.length)];
-                showComment(char, "...ちょっと考えすぎちゃった。");
+                document.getElementById('status').textContent = 'AI Status: Timeout/Reset';
+                showComment(currentCharacter.name, "...ちょっと考えすぎちゃった。");
               }
             }, 40000); // 40秒くらいまで待つ（GPU負荷を考慮）
 
@@ -325,7 +340,7 @@
             // 30%の確率でお堅い説明、70%の確率で素直な感想にする
             const isDescription = Math.random() < 0.01;
             const promptText = isDescription
-              ? "現在の画面に何が映っているか、客観的に短く説明してください。"
+              ? "現在の画面に何が映っているか、口語調で短く説明してください。"
               : "画面を見て、素直な感想を一言でつぶやいてください。説明は不要です。リアクションや心の声をお願いします。";
 
             worker.postMessage({
@@ -333,6 +348,7 @@
               payload: {
                 images: snapshots,
                 promptText: promptText,
+                characterProfile: currentCharacter.profile,
                 history: commentHistory
               }
             }, snapshots);
