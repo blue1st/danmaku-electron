@@ -1,6 +1,8 @@
 #!/bin/bash
 # scripts/update-homebrew.sh
 
+set -e
+
 VERSION=$1
 DMG_PATH="dist/danmaku-electron-${VERSION}-arm64.dmg"
 
@@ -60,6 +62,8 @@ EOF
 
 # コミットしてプッシュ
 cd "$TMP_DIR" || exit 1
+git config user.name "github-actions[bot]"
+git config user.email "github-actions[bot]@users.noreply.github.com"
 git add .
 git commit -m "chore: update danmaku-electron to v${VERSION}"
 git push origin main
