@@ -1,127 +1,163 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8" />
   <title>Danmaku</title>
-    <style>
-      body { margin:0; overflow:hidden; background:transparent; font-family: sans-serif; }
-      /* スプラッシュ画面 */
-      #splash {
-        position: fixed;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
-        background: transparent; /* 背景を完全に透明に */
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        z-index: 1000;
-        transition: opacity 1s ease-out, visibility 1s;
-        text-align: center;
-      }
-      #splash.hidden {
-        opacity: 0;
-        visibility: hidden;
-      }
-      .splash-content {
-        width: 600px; /* サイズ固定 */
-        min-height: 450px; /* 高さも余裕を持って固定 */
-        padding: 40px;
-        border-radius: 30px;
-        background: rgba(15, 15, 35, 0.85);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 15px 50px rgba(0,0,0,0.6);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between; /* 内容を分散配置して高さを安定させる */
-      }
-      .splash-title {
-        font-size: 48px;
-        font-weight: bold;
-        background: linear-gradient(to right, #00d2ff, #3a7bd5);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 20px;
-      }
-      .instruction {
-        font-size: 16px;
-        color: #ccc;
-        line-height: 1.6;
-        margin-bottom: 30px;
-      }
-      .loader {
-        width: 50px;
-        height: 50px;
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #3498db;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 20px;
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      .status-text {
-        font-size: 14px;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        color: #3498db;
-        margin-bottom: 20px;
-        height: 20px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: sans-serif;
+    }
+
+    /* スプラッシュ画面 */
+    #splash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: transparent;
+      /* 背景を完全に透明に */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      z-index: 1000;
+      transition: opacity 1s ease-out, visibility 1s;
+      text-align: center;
+    }
+
+    #splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .splash-content {
+      width: 600px;
+      /* サイズ固定 */
+      min-height: 450px;
+      /* 高さも余裕を持って固定 */
+      padding: 40px;
+      border-radius: 30px;
+      background: rgba(15, 15, 35, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      /* 内容を分散配置して高さを安定させる */
+    }
+
+    .splash-title {
+      font-size: 48px;
+      font-weight: bold;
+      background: linear-gradient(to right, #00d2ff, #3a7bd5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 20px;
+    }
+
+    .instruction {
+      font-size: 16px;
+      color: #ccc;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+
+    .loader {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
       }
 
-      #wrapper {
-        position:absolute;
-        top:0; left:0;
-        width:100%; height:100%;
-        box-sizing:border-box;
+      100% {
+        transform: rotate(360deg);
       }
-      .comment {
-        position:absolute;
-        white-space:nowrap;
-        font-size:72px;
-        color:#fff;
-        animation: scroll-left 16s linear forwards;
-        font-weight: bold;
-        text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+    }
+
+    .status-text {
+      font-size: 14px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #3498db;
+      margin-bottom: 20px;
+      height: 20px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+    }
+
+    .comment {
+      position: absolute;
+      white-space: nowrap;
+      font-size: 72px;
+      color: #fff;
+      animation: scroll-left 16s linear forwards;
+      font-weight: bold;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    }
+
+    @keyframes scroll-left {
+      from {
+        left: 100%;
       }
-      @keyframes scroll-left {
-        from { left:100%; }
-        to   { left:-100%; }
+
+      to {
+        left: -100%;
       }
-    </style>
-  </head>
-  <body>
-    <!-- スプラッシュ画面 -->
-    <div id="splash">
-      <div class="splash-content">
-        <div class="splash-title">Gemma Live</div>
-        <div class="loader"></div>
-        <div class="status-text" id="load-status">Downloading AI Model...</div>
-        <div class="instruction">
-          <p>デスクトップ画面をAIがリアルタイムに実況します。</p>
-          <p>モデル（約2GB）の初回ロードが完了するまでお待ちください。<br>
+    }
+  </style>
+</head>
+
+<body>
+  <!-- スプラッシュ画面 -->
+  <div id="splash">
+    <div class="splash-content">
+      <div class="splash-title">Gemma Live</div>
+      <div class="loader"></div>
+      <div class="status-text" id="load-status">Downloading AI Model...</div>
+      <div class="instruction">
+        <p>デスクトップ画面をAIがリアルタイムに実況します。</p>
+        <p>モデル（約2GB）の初回ロードが完了するまでお待ちください。<br>
           完了後、自動的にこの画面は消え、画面にコメントが流れ始めます。</p>
-        </div>
       </div>
     </div>
+  </div>
 
-    <div id="wrapper">
-      <div id="status" style="position:fixed; bottom:10px; right:10px; color:rgba(255,255,255,0.5); font-size:12px;">AI Initializing...</div>
-      <div id="marquee"></div>
-    </div>
+  <div id="wrapper">
+    <div id="status" style="position:fixed; bottom:10px; right:10px; color:rgba(255,255,255,0.5); font-size:12px;">AI
+      Initializing...</div>
+    <div id="marquee"></div>
+  </div>
   <script>
     const characters = ["暇人A", "通りすがりのAI", "デスクトップ監視員", "Gemma-chan", "匿名希望", "名無し", "キャプチャ愛好家"];
     const { ipcRenderer } = require('electron');
 
     function updateStatus(text) {
-        ipcRenderer.send('update-status', text);
+      ipcRenderer.send('update-status', text);
     }
 
     let worker = null;
@@ -136,184 +172,185 @@
     const INFERENCE_INTERVAL = 10000; // 10秒ごとに推論
 
     const fallbackComments = [
-        "うーん、よく見えないな...",
-        "ちょっと何が起きてるかわからないかも",
-        "画面が眩しい...",
-        "なんだかぼんやりしてるね",
-        "解析エラーかしら？よく見えないです",
-        "...（じーっと見ている）",
-        "今はちょっと休憩中かな？",
-        "おや、画面が真っ暗？",
-        "ちょっと見失っちゃった"
+      "うーん、よく見えないな...",
+      "ちょっと何が起きてるかわからないかも",
+      "画面が眩しい...",
+      "なんだかぼんやりしてるね",
+      "解析エラーかしら？よく見えないです",
+      "...（じーっと見ている）",
+      "今はちょっと休憩中かな？",
+      "おや、画面が真っ暗？",
+      "ちょっと見失っちゃった"
     ];
 
     const marquee = document.getElementById('marquee');
 
     function initWorker() {
-        worker = new Worker('worker.js');
-        worker.onmessage = (e) => {
-            const { type, payload, error } = e.data;
-            if (type === 'progress') {
-                const statusEl = document.getElementById('load-status');
-                if (payload.status === 'progress') {
-                    const percent = payload.progress.toFixed(1);
-                    const text = `DL: ${percent}% (${payload.file})`;
-                    statusEl.textContent = text;
-                    updateStatus(text);
-                } else if (payload.status === 'initiate') {
-                    statusEl.textContent = `Initiating: ${payload.file}...`;
-                } else if (payload.status === 'done') {
-                    statusEl.textContent = `Loaded: ${payload.file}`;
-                } else if (payload.status === 'status') {
-                    statusEl.textContent = payload.text;
-                    updateStatus(payload.text);
-                }
-            } else if (type === 'ready') {
-                isReady = true;
-                console.log('AI System Ready');
-                document.getElementById('status').textContent = 'AI System Active';
-                updateStatus('AIアクティブ（解析中）');
-                const splash = document.getElementById('splash');
-                splash.classList.add('hidden');
-                
-                showComment("システム", "AI解析の準備が整いました。3秒後に実況を開始します...");
-                
-                // リソースの衝突を避けるために少し待機してからキャプチャ開始
-                setTimeout(() => {
-                    startCapture();
-                }, 3000);
-            } else if (type === 'result') {
-                isProcessing = false;
-                if (inferenceTimeout) clearTimeout(inferenceTimeout);
-                updateStatus('AIアクティブ（解析中）');
-                const char = characters[Math.floor(Math.random() * characters.length)];
-                
-                let text = payload.text;
-                if (!text || text.length < 2) {
-                    text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
-                } else {
-                    // 履歴に追加
-                    commentHistory.push(text);
-                    if (commentHistory.length > MAX_HISTORY) commentHistory.shift();
-                }
-                showComment(char, text);
-            } else if (type === 'error') {
-                isProcessing = false;
-                if (inferenceTimeout) clearTimeout(inferenceTimeout);
-                console.error('Worker Error:', error);
-                const statusEl = document.getElementById('load-status');
-                if (statusEl) {
-                    statusEl.textContent = `Error: ${error}`;
-                    statusEl.style.color = '#ff6b6b';
-                }
-                
-                // 推論中のエラーであれば、当たり障りないコメントを出す
-                const char = characters[Math.floor(Math.random() * characters.length)];
-                const text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
-                showComment(char, text);
-                updateStatus(`AIエラー: ${error}`);
-                console.warn('Fallback due to worker error:', error);
-            }
-        };
-        worker.postMessage({ type: 'init' });
+      worker = new Worker('worker.js');
+      worker.onmessage = (e) => {
+        const { type, payload, error } = e.data;
+        if (type === 'progress') {
+          const statusEl = document.getElementById('load-status');
+          if (payload.status === 'progress') {
+            const percent = payload.progress.toFixed(1);
+            const text = `DL: ${percent}% (${payload.file})`;
+            statusEl.textContent = text;
+            updateStatus(text);
+          } else if (payload.status === 'initiate') {
+            statusEl.textContent = `Initiating: ${payload.file}...`;
+          } else if (payload.status === 'done') {
+            statusEl.textContent = `Loaded: ${payload.file}`;
+          } else if (payload.status === 'status') {
+            statusEl.textContent = payload.text;
+            updateStatus(payload.text);
+          }
+        } else if (type === 'ready') {
+          isReady = true;
+          console.log('AI System Ready');
+          document.getElementById('status').textContent = 'AI System Active';
+          updateStatus('AIアクティブ（解析中）');
+          const splash = document.getElementById('splash');
+          splash.classList.add('hidden');
+
+          showComment("システム", "AI解析の準備が整いました。3秒後に実況を開始します...");
+
+          // リソースの衝突を避けるために少し待機してからキャプチャ開始
+          setTimeout(() => {
+            startCapture();
+          }, 3000);
+        } else if (type === 'result') {
+          isProcessing = false;
+          if (inferenceTimeout) clearTimeout(inferenceTimeout);
+          updateStatus('AIアクティブ（解析中）');
+          const char = characters[Math.floor(Math.random() * characters.length)];
+
+          let text = payload.text;
+          if (!text || text.length < 2) {
+            text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
+          } else {
+            // 履歴に追加
+            commentHistory.push(text);
+            if (commentHistory.length > MAX_HISTORY) commentHistory.shift();
+          }
+          showComment(char, text);
+        } else if (type === 'error') {
+          isProcessing = false;
+          if (inferenceTimeout) clearTimeout(inferenceTimeout);
+          console.error('Worker Error:', error);
+          const statusEl = document.getElementById('load-status');
+          if (statusEl) {
+            statusEl.textContent = `Error: ${error}`;
+            statusEl.style.color = '#ff6b6b';
+          }
+
+          // 推論中のエラーであれば、当たり障りないコメントを出す
+          const char = characters[Math.floor(Math.random() * characters.length)];
+          const text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
+          showComment(char, text);
+          updateStatus(`AIエラー: ${error}`);
+          console.warn('Fallback due to worker error:', error);
+        }
+      };
+      worker.postMessage({ type: 'init' });
     }
 
     function showComment(name, text) {
-        const fullText = `${name}: ${text}`;
-        const el = document.createElement('div');
-        el.className = 'comment';
-        el.textContent = fullText;
-        
-        const maxY = window.innerHeight * 0.8;
-        const yPos = Math.random() * maxY;
-        el.style.top = `${yPos}px`;
-        
-        // 文字色をランダムにする（視認性向上のため）
-        const colors = ['#fff', '#f0f', '#0ff', '#0f0', '#ff0'];
-        el.style.color = colors[Math.floor(Math.random() * colors.length)];
-        el.style.textShadow = '2px 2px 4px #000';
+      const fullText = `${name}: ${text}`;
+      const el = document.createElement('div');
+      el.className = 'comment';
+      el.textContent = fullText;
 
-        document.body.appendChild(el);
-        el.addEventListener('animationend', () => el.remove());
+      const maxY = window.innerHeight * 0.8;
+      const yPos = Math.random() * maxY;
+      el.style.top = `${yPos}px`;
+
+      // 文字色をランダムにする（視認性向上のため）
+      const colors = ['#fff', '#f0f', '#0ff', '#0f0', '#ff0'];
+      el.style.color = colors[Math.floor(Math.random() * colors.length)];
+      el.style.textShadow = '2px 2px 4px #000';
+
+      document.body.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
     }
 
     async function startCapture() {
-        try {
-            const stream = await navigator.mediaDevices.getDisplayMedia({
-                video: { width: 448, height: 448 },
-                audio: false
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { width: 448, height: 448 },
+          audio: false
+        });
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.play();
+
+        // 定期的にフレームをバッファに追加
+        setInterval(async () => {
+          if (video.readyState >= 2) {
+            const bitmap = await createImageBitmap(video, {
+              resizeWidth: 448,
+              resizeHeight: 448
             });
-            const video = document.createElement('video');
-            video.srcObject = stream;
-            video.play();
+            frameBuffer.push(bitmap);
+            if (frameBuffer.length > MAX_FRAMES) {
+              const old = frameBuffer.shift();
+              old.close();
+            }
+          }
+        }, CAPTURE_INTERVAL);
 
-            // 定期的にフレームをバッファに追加
-            setInterval(async () => {
-                if (video.readyState >= 2) {
-                    const bitmap = await createImageBitmap(video, {
-                        resizeWidth: 448,
-                        resizeHeight: 448
-                    });
-                    frameBuffer.push(bitmap);
-                    if (frameBuffer.length > MAX_FRAMES) {
-                        const old = frameBuffer.shift();
-                        old.close();
-                    }
-                }
-            }, CAPTURE_INTERVAL);
+        // 定期的に推論
+        setInterval(() => {
+          if (isReady && frameBuffer.length >= 1 && !isProcessing) {
+            isProcessing = true;
 
-            // 定期的に推論
-            setInterval(() => {
-                if (isReady && frameBuffer.length >= 1 && !isProcessing) {
-                    isProcessing = true;
-                    
-                    // タイムアウト監視（30秒でリセット）
-                    if (inferenceTimeout) clearTimeout(inferenceTimeout);
-                    inferenceTimeout = setTimeout(() => {
-                        if (isProcessing) {
-                            console.warn('Inference timed out. Resetting...');
-                            isProcessing = false;
-                            updateStatus('AI応答タイムアウト（リセット中）');
-                            document.getElementById('status').textContent = 'AI Status: Timeout/Reset';
-                            const char = characters[Math.floor(Math.random() * characters.length)];
-                            showComment(char, "...ちょっと考えすぎちゃった。");
-                        }
-                    }, 40000); // 40秒くらいまで待つ（GPU負荷を考慮）
+            // タイムアウト監視（30秒でリセット）
+            if (inferenceTimeout) clearTimeout(inferenceTimeout);
+            inferenceTimeout = setTimeout(() => {
+              if (isProcessing) {
+                console.warn('Inference timed out. Resetting...');
+                isProcessing = false;
+                updateStatus('AI応答タイムアウト（リセット中）');
+                document.getElementById('status').textContent = 'AI Status: Timeout/Reset';
+                const char = characters[Math.floor(Math.random() * characters.length)];
+                showComment(char, "...ちょっと考えすぎちゃった。");
+              }
+            }, 40000); // 40秒くらいまで待つ（GPU負荷を考慮）
 
-                    // ImageBitmapの配列を転送 (Zero-copy)
-                    const snapshots = [...frameBuffer];
-                    const statusText = '実況考案中...';
-                    updateStatus(statusText);
-                    document.getElementById('status').textContent = `AI Status: ${statusText}`;
-                    
-                    // 30%の確率でお堅い説明、70%の確率で素直な感想にする
-                    const isDescription = Math.random() < 0.3;
-                    const promptText = isDescription 
-                        ? "現在の画面に何が映っているか、客観的に短く説明してください。" 
-                        : "画面を見て、素直な感想を一言でつぶやいてください。説明は不要です。リアクションや心の声を短くお願いします。";
+            // ImageBitmapの配列を転送 (Zero-copy)
+            const snapshots = [...frameBuffer];
+            const statusText = '実況考案中...';
+            updateStatus(statusText);
+            document.getElementById('status').textContent = `AI Status: ${statusText}`;
 
-                    worker.postMessage({
-                        type: 'generate',
-                        payload: {
-                            images: snapshots,
-                            promptText: promptText,
-                            history: commentHistory
-                        }
-                    }, snapshots);
-                    
-                    // 送信した分はクリア
-                    frameBuffer = [];
-                }
-            }, INFERENCE_INTERVAL);
+            // 30%の確率でお堅い説明、70%の確率で素直な感想にする
+            const isDescription = Math.random() < 0.01;
+            const promptText = isDescription
+              ? "現在の画面に何が映っているか、客観的に短く説明してください。"
+              : "画面を見て、素直な感想を一言でつぶやいてください。説明は不要です。リアクションや心の声をお願いします。";
 
-        } catch (err) {
-            console.error('Error starting capture:', err);
-            showComment("エラー", "画面キャプチャの開始に失敗しました。");
-        }
+            worker.postMessage({
+              type: 'generate',
+              payload: {
+                images: snapshots,
+                promptText: promptText,
+                history: commentHistory
+              }
+            }, snapshots);
+
+            // 送信した分はクリア
+            frameBuffer = [];
+          }
+        }, INFERENCE_INTERVAL);
+
+      } catch (err) {
+        console.error('Error starting capture:', err);
+        showComment("エラー", "画面キャプチャの開始に失敗しました。");
+      }
     }
 
     // 開始
     initWorker();
   </script>
-  </body>
+</body>
+
 </html>
