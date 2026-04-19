@@ -15,7 +15,7 @@ const UPDATE_INTERVAL = 500; // 0.5秒おきにトレイを更新
 async function init(payload) {
     const { modelId, userDataPath } = payload;
     const model_id = modelId || 'onnx-community/gemma-4-E2B-it-ONNX';
-    
+
     // 環境設定の初期化
     env.allowLocalModels = false;
     env.useBrowserCache = false; // Electronではディスクキャッシュ（userData）を優先
@@ -44,9 +44,9 @@ async function init(payload) {
         };
 
         self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 1: Fetching Configs...' } });
-        processor = await AutoProcessor.from_pretrained(model_id, { 
+        processor = await AutoProcessor.from_pretrained(model_id, {
             revision: 'main',
-            progress_callback 
+            progress_callback
         });
 
         self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 2: Checking WebGPU...' } });
@@ -125,9 +125,9 @@ self.onmessage = async (e) => {
                 ...inputs,
                 max_new_tokens: 48,
                 do_sample: true,
-                temperature: 1.0,
+                temperature: 0.7,
                 top_p: 0.9,
-                repetition_penalty: 1.5,
+                repetition_penalty: 1.1,
             });
 
             // プロンプト部分を除去してデコード
