@@ -67,6 +67,7 @@ self.onmessage = async (e) => {
     } else if (type === 'generate') {
         const { images, promptText } = payload;
         try {
+            console.log('Generating comment with', images.length, 'images...');
             // ImageBitmapをRawImageに変換
             const rawImages = await Promise.all(images.map(async (img) => {
                 const canvas = new OffscreenCanvas(img.width, img.height);
@@ -87,27 +88,43 @@ self.onmessage = async (e) => {
                 tokenize: false
             });
             
-            // トークンの強制挿入
+            // トークンの強制挿入（テンプレートが未対応の場合のバックアップ）
             const imageTag = processor.image_token || '<image>';
             if (images.length > 0 && !prompt.includes(imageTag)) {
                 const placeholders = imageTag.repeat(images.length);
                 prompt = prompt.replace(/(<start_of_turn>user\s*)/, `$1\n${placeholders}\n`);
             }
             
+            console.log('Final Prompt:', prompt);
             const inputs = await processor(prompt, rawImages);
             
             const outputs = await model.generate({
                 ...inputs,
-                max_new_tokens: 64,
+                max_new_tokens: 32,
                 do_sample: true,
                 temperature: 0.7,
+                repetition_penalty: 1.2,
             });
 
-            const decoded = processor.batch_decode(outputs, { skip_special_tokens: true });
+            // プロンプト部分を除去してデコード
+            const promptTokenCount = inputs.input_ids.dims[1];
+            const decoded = processor.batch_decode(outputs.slice(null, [promptTokenCount, null]), { 
+                skip_special_tokens: true,
+                clean_up_tokenization_spaces: true 
+            });
             
-            // 返答の抽出
-            const reply = decoded[0].split('model\n').pop().trim();
+            let reply = decoded[0].trim();
+            console.log('Generated Reply:', reply);
             
+            // 何も生成されなかった場合の最終防衛ライン
+            if (!reply) {
+                // デコード全体を試して "model" で分割する旧来の方法をフォールバックとして試す
+                const fullDecoded = processor.batch_decode(outputs, { skip_special_tokens: true });
+                const parts = fullDecoded[0].split('model');
+                reply = parts.length > 1 ? parts.pop().trim() : "";
+                console.log('Fallback Slicing Reply:', reply);
+            }
+
             self.postMessage({ type: 'result', payload: { text: reply } });
 
             // テンソルの解放
@@ -117,8 +134,8 @@ self.onmessage = async (e) => {
             if (outputs) outputs.dispose?.();
 
         } catch (error) {
-            console.error('Inference error:', error);
-            self.postMessage({ type: 'error', error: error.message });
+            console.error('Inference error detail:', error);
+            self.postMessage({ type: 'error', error: `Inference failed: ${error.message}` });
         } finally {
             images.forEach(img => img.close());
         }

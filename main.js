@@ -1,5 +1,12 @@
-const { app, BrowserWindow, Tray, Menu, screen, session, desktopCapturer, ipcMain } = require('electron');
 const path = require('path');
+const { app, BrowserWindow, Tray, Menu, screen, session, desktopCapturer, ipcMain } = require('electron');
+
+// GPU安定性とWebGPUのためのフラグ
+app.commandLine.appendSwitch('enable-unsafe-webgpu');
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+app.commandLine.appendSwitch('force_high_performance_gpu');
+// Windows/LinuxでのVulkan安定化などのためだがmacOSでも悪影響は少ない
+app.commandLine.appendSwitch('enable-features', 'Vulkan,UseSkiaRenderer');
 
 let mainWin;
 let tray;

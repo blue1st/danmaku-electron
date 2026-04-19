@@ -126,10 +126,24 @@
 
     let worker = null;
     let isReady = false;
+    let isProcessing = false;
+    let inferenceTimeout = null;
     let frameBuffer = [];
-    const MAX_FRAMES = 8;
+    const MAX_FRAMES = 1;
     const CAPTURE_INTERVAL = 3000; // 3秒ごとにキャプチャ
     const INFERENCE_INTERVAL = 10000; // 10秒ごとに推論
+
+    const fallbackComments = [
+        "うーん、よく見えないな...",
+        "ちょっと何が起きてるかわからないかも",
+        "画面が眩しい...",
+        "なんだかぼんやりしてるね",
+        "解析エラーかしら？よく見えないです",
+        "...（じーっと見ている）",
+        "今はちょっと休憩中かな？",
+        "おや、画面が真っ暗？",
+        "ちょっと見失っちゃった"
+    ];
 
     const marquee = document.getElementById('marquee');
 
@@ -160,17 +174,39 @@
                 const splash = document.getElementById('splash');
                 splash.classList.add('hidden');
                 
-                showComment("システム", "AI解析の準備が整いました。実況を開始します！");
-                startCapture(); // ここで開始
+                showComment("システム", "AI解析の準備が整いました。3秒後に実況を開始します...");
+                
+                // リソースの衝突を避けるために少し待機してからキャプチャ開始
+                setTimeout(() => {
+                    startCapture();
+                }, 3000);
             } else if (type === 'result') {
+                isProcessing = false;
+                if (inferenceTimeout) clearTimeout(inferenceTimeout);
                 updateStatus('AIアクティブ（解析中）');
                 const char = characters[Math.floor(Math.random() * characters.length)];
-                showComment(char, payload.text);
+                
+                let text = payload.text;
+                if (!text || text.length < 2) {
+                    text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
+                }
+                showComment(char, text);
             } else if (type === 'error') {
+                isProcessing = false;
+                if (inferenceTimeout) clearTimeout(inferenceTimeout);
                 console.error('Worker Error:', error);
                 const statusEl = document.getElementById('load-status');
-                statusEl.textContent = `Error: ${error}`;
-                statusEl.style.color = '#ff6b6b';
+                if (statusEl) {
+                    statusEl.textContent = `Error: ${error}`;
+                    statusEl.style.color = '#ff6b6b';
+                }
+                
+                // 推論中のエラーであれば、当たり障りないコメントを出す
+                const char = characters[Math.floor(Math.random() * characters.length)];
+                const text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
+                showComment(char, text);
+                updateStatus(`AIエラー: ${error}`);
+                console.warn('Fallback due to worker error:', error);
             }
         };
         worker.postMessage({ type: 'init' });
@@ -222,15 +258,28 @@
 
             // 定期的に推論
             setInterval(() => {
-                if (isReady && frameBuffer.length >= 1) {
+                if (isReady && frameBuffer.length >= 1 && !isProcessing) {
+                    isProcessing = true;
+                    
+                    // タイムアウト監視（30秒でリセット）
+                    if (inferenceTimeout) clearTimeout(inferenceTimeout);
+                    inferenceTimeout = setTimeout(() => {
+                        if (isProcessing) {
+                            console.warn('Inference timed out. Resetting...');
+                            isProcessing = false;
+                            updateStatus('AI応答タイムアウト（リセット中）');
+                            document.getElementById('status').textContent = 'AI Status: Timeout/Reset';
+                            const char = characters[Math.floor(Math.random() * characters.length)];
+                            showComment(char, "...ちょっと考えすぎちゃった。");
+                        }
+                    }, 40000); // 40秒くらいまで待つ（GPU負荷を考慮）
+
                     // ImageBitmapの配列を転送 (Zero-copy)
-                    // 元のビットマップは Worker 側で close される想定だが、
-                    // こちらでも参照を消しておく
-                    const framesToProcess = [...frameBuffer];
-                    // workerに送るために一時的にバッファを空にするか、コピーを送る
-                    // AGENTS.md に従い transferable として送る
-                    const snapshots = framesToProcess.map(b => b); 
-                    updateStatus('実況考案中...');
+                    const snapshots = [...frameBuffer];
+                    const statusText = '実況考案中...';
+                    updateStatus(statusText);
+                    document.getElementById('status').textContent = `AI Status: ${statusText}`;
+                    
                     worker.postMessage({
                         type: 'generate',
                         payload: {
@@ -239,7 +288,7 @@
                         }
                     }, snapshots);
                     
-                    // 送信した分はクリア（Worker側でcloseされる）
+                    // 送信した分はクリア
                     frameBuffer = [];
                 }
             }, INFERENCE_INTERVAL);
