@@ -1,8 +1,4 @@
 {
-  "github": {
-    "release": true,
-    "assets": ["dist/danmaku-electron-${version}-arm64.dmg"]
-  },
   "git": {
     "commitMessage": "chore: release v${version}",
     "tagName": "v${version}"
@@ -15,9 +11,5 @@
       "preset": "angular",
       "infile": "CHANGELOG.md"
     }
-  },
-  "hooks": {
-    "after:bump": ["npm run dist"],
-    "after:git:release": ["bash scripts/update-homebrew.sh ${version}"]
   }
 }
