@@ -1,6 +1,6 @@
 {
   "name": "danmaku-electron",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "build": {
     "appId": "com.example.danmaku",
     "mac": {
