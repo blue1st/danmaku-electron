@@ -198,7 +198,11 @@
       ipcRenderer.send('update-status', text);
     }
 
-    let worker = null;
+    ipcRenderer.on('update-interval', (event, ms) => {
+      INFERENCE_INTERVAL = ms;
+      console.log('Inference interval updated to:', ms);
+    });
+
     let isReady = false;
     let isProcessing = false;
     let inferenceTimeout = null;
@@ -207,7 +211,7 @@
     const MAX_HISTORY = 5;
     const MAX_FRAMES = 1;
     const CAPTURE_INTERVAL = 3000; // 3秒ごとにキャプチャ
-    const INFERENCE_INTERVAL = 10000; // 10秒ごとに推論
+    let INFERENCE_INTERVAL = 10000; // 初期値10秒
 
     const fallbackComments = [
       "うーん、よく見えないな...",
@@ -352,8 +356,8 @@
           }
         }, CAPTURE_INTERVAL);
 
-        // 定期的に推論
-        setInterval(() => {
+        // 推論ループを開始
+        function scheduleInference() {
           if (isReady && frameBuffer.length >= 1 && !isProcessing) {
             isProcessing = true;
 
@@ -364,7 +368,6 @@
                 console.warn('Inference timed out. Resetting...');
                 isProcessing = false;
                 updateStatus('AI応答タイムアウト（リセット中）');
-                document.getElementById('status').textContent = 'AI Status: Timeout/Reset';
                 document.getElementById('status').textContent = 'AI Status: Timeout/Reset';
                 showComment(lastSentCharacter.name, "...ちょっと考えすぎちゃった。");
               }
@@ -386,7 +389,7 @@
             ];
             const basePrompt = promptVariations[Math.floor(Math.random() * promptVariations.length)];
 
-            const isDescription = Math.random() < 0.01;
+            const isDescription = Math.random() < 0.05;
             const promptText = isDescription
               ? "現在の画面に何が映っているか、口語調で短く説明してください。"
               : `${basePrompt} 説明は不要です。リアクションや心の声をお願いします。`;
@@ -407,7 +410,11 @@
             // 送信した分はクリア
             frameBuffer = [];
           }
-        }, INFERENCE_INTERVAL);
+          // 次の推論をスケジュール
+          setTimeout(scheduleInference, INFERENCE_INTERVAL);
+        }
+
+        scheduleInference();
 
       } catch (err) {
         console.error('Error starting capture:', err);

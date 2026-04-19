@@ -11,6 +11,15 @@ app.commandLine.appendSwitch('enable-features', 'Vulkan,UseSkiaRenderer');
 let mainWin;
 let tray;
 let currentStatus = '初期化中...';
+let currentInterval = 10000;
+
+function changeInterval(ms) {
+  currentInterval = ms;
+  if (mainWin) {
+    mainWin.webContents.send('update-interval', ms);
+  }
+  updateTrayMenu();
+}
 
 function updateTrayMenu() {
   if (!tray || !mainWin) return;
@@ -39,6 +48,15 @@ function updateTrayMenu() {
         }
         updateTrayMenu();
       }
+    },
+    {
+      label: '解析頻度',
+      submenu: [
+        { label: '高速 (5秒)', type: 'radio', checked: currentInterval === 5000, click: () => changeInterval(5000) },
+        { label: '標準 (10秒)', type: 'radio', checked: currentInterval === 10000, click: () => changeInterval(10000) },
+        { label: '低速 (20秒)', type: 'radio', checked: currentInterval === 20000, click: () => changeInterval(20000) },
+        { label: '極低速 (40秒)', type: 'radio', checked: currentInterval === 40000, click: () => changeInterval(40000) },
+      ]
     },
     { type: 'separator' },
     { label: '終了', role: 'quit' }
