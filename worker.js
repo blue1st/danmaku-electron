@@ -36,7 +36,7 @@ async function init(customModelId) {
 
         self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 1: Fetching Configs...' } });
         processor = await AutoProcessor.from_pretrained(model_id, { revision: 'main' });
-        
+
         self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 2: Checking WebGPU...' } });
         if (!navigator.gpu) {
             throw new Error('WebGPU is not supported');
@@ -49,7 +49,7 @@ async function init(customModelId) {
             revision: 'main',
             progress_callback
         });
-        
+
         self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 4: Compiling...' } });
         console.log('Model loaded successful!');
         self.postMessage({ type: 'ready' });
@@ -67,7 +67,7 @@ self.onmessage = async (e) => {
         const { images, promptText, history, characterProfile } = payload;
         try {
             console.log('Generating comment with', images.length, 'images...');
-            
+
             // ImageBitmapをRawImageに変換
             const rawImages = await Promise.all(images.map(async (img) => {
                 const canvas = new OffscreenCanvas(img.width, img.height);
@@ -78,37 +78,37 @@ self.onmessage = async (e) => {
             }));
 
             // チャットテンプレートの構築
-            let fullPrompt = `あなたは以下のキャラクターになりきり、デスクトップ画面のキャプチャを見て独り言やリアクションをしてください。
+            let fullPrompt = `あなたは以下のキャラクターになりきり、デスクトップ画面のキャプチャや他の投稿を見て独り言やリアクションをしてください。
 必ずキャラクターの設定（口調、性格、今の気分）を反映させ、ありきたりな表現やつまらない説明は避けてください。
-文字数は短く（20文字以内）、そのキャラが言いそうな生々しい一言をお願いします。
+文字数は短く（20文字以内）、そのキャラが言いそうな生々しい一言をお願いします。絵文字は使わないでください。
 
 【キャラクター設定】: ${characterProfile}
 【指令】: ${promptText}`;
-            
+
             if (history && history.length > 0) {
                 fullPrompt += `\n\n（※過去のあなたの発言履歴：${history.join('、')}。これらとは違う新しい表現を使ってください）`;
             }
 
             const content = images.map(() => ({ type: 'image' }));
             content.push({ type: 'text', text: fullPrompt });
-            
+
             const messages = [{ role: 'user', content }];
-            
+
             let prompt = await processor.apply_chat_template(messages, {
                 add_generation_prompt: true,
                 tokenize: false
             });
-            
+
             // トークンの強制挿入（テンプレートが未対応の場合のバックアップ）
             const imageTag = processor.image_token || '<image>';
             if (images.length > 0 && !prompt.includes(imageTag)) {
                 const placeholders = imageTag.repeat(images.length);
                 prompt = prompt.replace(/(<start_of_turn>user\s*)/, `$1\n${placeholders}\n`);
             }
-            
+
             console.log('Final Prompt:', prompt);
             const inputs = await processor(prompt, rawImages);
-            
+
             const outputs = await model.generate({
                 ...inputs,
                 max_new_tokens: 48,
@@ -120,14 +120,14 @@ self.onmessage = async (e) => {
 
             // プロンプト部分を除去してデコード
             const promptTokenCount = inputs.input_ids.dims[1];
-            const decoded = processor.batch_decode(outputs.slice(null, [promptTokenCount, null]), { 
+            const decoded = processor.batch_decode(outputs.slice(null, [promptTokenCount, null]), {
                 skip_special_tokens: true,
-                clean_up_tokenization_spaces: true 
+                clean_up_tokenization_spaces: true
             });
-            
+
             let reply = decoded[0].trim();
             console.log('Generated Reply:', reply);
-            
+
             // 何も生成されなかった場合の最終防衛ライン
             if (!reply) {
                 // デコード全体を試して "model" で分割する旧来の方法をフォールバックとして試す
