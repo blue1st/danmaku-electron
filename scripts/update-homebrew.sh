@@ -36,11 +36,11 @@ cask "danmaku-electron" do
   desc "AI Desktop Commentary Overlay"
   homepage "https://github.com/blue1st/danmaku-electron"
 
-  app "Danmaku Electron.app"
+  app "danmaku-electron.app"
 
   zap trash: [
     "~/Library/Application Support/danmaku-electron",
-    "~/Library/Preferences/com.example.danmaku-electron.plist",
+    "~/Library/Preferences/com.example.danmaku.plist",
     "~/Library/Logs/danmaku-electron",
   ]
 end
