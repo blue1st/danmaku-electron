@@ -1,6 +1,7 @@
 {
   "github": {
-    "release": false
+    "release": true,
+    "assets": ["dist/danmaku-electron-${version}-arm64.dmg"]
   },
   "git": {
     "commitMessage": "chore: release v${version}",
@@ -13,6 +14,15 @@
     "@release-it/conventional-changelog": {
       "preset": "angular",
       "infile": "CHANGELOG.md"
+    },
+    "@release-it/homebrew": {
+      "isCask": true,
+      "repository": "blue1st/homebrew-taps",
+      "token": "${HOMEBREW_TAP_TOKEN}",
+      "template": "cask \"danmaku-electron\" do\n  version \"${version}\"\n  sha256 \"${sha256}\"\n\n  url \"https://github.com/blue1st/danmaku-electron/releases/download/v${version}/danmaku-electron-${version}-arm64.dmg\"\n  name \"Danmaku Electron\"\n  desc \"AI Desktop Commentary Overlay\"\n  homepage \"https://github.com/blue1st/danmaku-electron\"\n\n  app \"Danmaku Electron.app\"\n\n  zap trash: [\n    \"~/Library/Application Support/danmaku-electron\",\n    \"~/Library/Preferences/com.example.danmaku-electron.plist\",\n    \"~/Library/Logs/danmaku-electron\",\n  ]\nend"
     }
+  },
+  "hooks": {
+    "before:init": ["npm run dist"]
   }
 }
