@@ -1,5 +1,6 @@
 const path = require('path');
 const { app, BrowserWindow, Tray, Menu, screen, session, desktopCapturer, ipcMain } = require('electron');
+const fs = require('fs');
 
 // GPU安定性とWebGPUのためのフラグ
 app.commandLine.appendSwitch('enable-unsafe-webgpu');
@@ -8,8 +9,30 @@ app.commandLine.appendSwitch('force_high_performance_gpu');
 // Windows/LinuxでのVulkan安定化などのためだがmacOSでも悪影響は少ない
 app.commandLine.appendSwitch('enable-features', 'Vulkan,UseSkiaRenderer');
 
+const configPath = path.join(app.getPath('userData'), 'config.json');
+
+function loadConfig() {
+  try {
+    if (fs.existsSync(configPath)) {
+      return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    }
+  } catch (e) {
+    console.error('Failed to load config:', e);
+  }
+  return { modelType: 'E2B' };
+}
+
+function saveConfig(config) {
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  } catch (e) {
+    console.error('Failed to save config:', e);
+  }
+}
+
 let mainWin;
 let tray;
+let config = loadConfig();
 let currentStatus = '初期化中...';
 let currentInterval = 10000;
 
@@ -19,6 +42,14 @@ function changeInterval(ms) {
     mainWin.webContents.send('update-interval', ms);
   }
   updateTrayMenu();
+}
+
+function switchModel(type) {
+  if (config.modelType === type) return;
+  config.modelType = type;
+  saveConfig(config);
+  app.relaunch();
+  app.exit(0);
 }
 
 function updateTrayMenu() {
@@ -34,6 +65,7 @@ function updateTrayMenu() {
 
   const contextMenu = Menu.buildFromTemplate([
     { label: `ステータス: ${currentStatus}`, enabled: false },
+    { label: `モデル: ${config.modelType === 'E4B' ? 'Gemma 4 E4B' : 'Gemma 4 E2B'}`, enabled: false },
     { type: 'separator' },
     {
       label: '画面を表示',
@@ -56,6 +88,13 @@ function updateTrayMenu() {
         { label: '標準 (10秒)', type: 'radio', checked: currentInterval === 10000, click: () => changeInterval(10000) },
         { label: '低速 (20秒)', type: 'radio', checked: currentInterval === 20000, click: () => changeInterval(20000) },
         { label: '極低速 (40秒)', type: 'radio', checked: currentInterval === 40000, click: () => changeInterval(40000) },
+      ]
+    },
+    {
+      label: 'AIモデル (要再起動)',
+      submenu: [
+        { label: 'Gemma 4 E2B (2.5B / 軽量)', type: 'radio', checked: config.modelType === 'E2B', click: () => switchModel('E2B') },
+        { label: 'Gemma 4 E4B (4.3B / 高精度)', type: 'radio', checked: config.modelType === 'E4B', click: () => switchModel('E4B') },
       ]
     },
     { type: 'separator' },
@@ -96,6 +135,11 @@ function createWindow() {
   });
 
   mainWin.loadFile('index.html');
+  
+  mainWin.webContents.on('did-finish-load', () => {
+    mainWin.webContents.send('init-config', config);
+  });
+
   // ウインドウ内のマウスクリックを透過（背後のウィンドウへ）
   // forward:true にすると子要素が CSS の pointer-events で受け取れるようになる
   mainWin.once('ready-to-show', () => {

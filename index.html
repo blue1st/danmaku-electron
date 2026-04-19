@@ -187,7 +187,7 @@
       };
     }
 
-    const CHARACTER_COUNT = 12;
+    const CHARACTER_COUNT = Math.floor(Math.random() * 7) + 6; // 6〜12人の間でランダム
     const activeCharacters = Array.from({ length: CHARACTER_COUNT }, () => generateCharacter());
     let lastSentCharacter = activeCharacters[0];
     console.log("Active Characters:", activeCharacters.map(c => c.name));
@@ -201,6 +201,14 @@
     ipcRenderer.on('update-interval', (event, ms) => {
       INFERENCE_INTERVAL = ms;
       console.log('Inference interval updated to:', ms);
+    });
+
+    ipcRenderer.on('init-config', (event, config) => {
+      const modelId = config.modelType === 'E4B' 
+        ? 'onnx-community/gemma-4-E4B-it-ONNX' 
+        : 'onnx-community/gemma-4-E2B-it-ONNX';
+      console.log('Initializing with model:', modelId);
+      initWorker(modelId);
     });
 
     let isReady = false;
@@ -227,7 +235,7 @@
 
     const marquee = document.getElementById('marquee');
 
-    function initWorker() {
+    function initWorker(modelId) {
       worker = new Worker('worker.js');
       worker.onmessage = (e) => {
         const { type, payload, error } = e.data;
@@ -308,7 +316,7 @@
           console.warn('Fallback due to worker error:', error);
         }
       };
-      worker.postMessage({ type: 'init' });
+      worker.postMessage({ type: 'init', payload: { modelId } });
     }
 
     function showComment(name, text) {
@@ -422,8 +430,7 @@
       }
     }
 
-    // 開始
-    initWorker();
+    // init-configを待機して開始される
   </script>
 </body>
 

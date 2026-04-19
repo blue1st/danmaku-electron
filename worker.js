@@ -11,17 +11,16 @@ env.useBrowserCache = true;
 
 let model;
 let processor;
-const model_id = 'onnx-community/gemma-4-E2B-it-ONNX';
-
 // 進捗の throttled update 用
 let lastUpdateTime = 0;
 const UPDATE_INTERVAL = 500; // 0.5秒おきにトレイを更新
 
-async function init() {
+async function init(customModelId) {
+    const model_id = customModelId || 'onnx-community/gemma-4-E2B-it-ONNX';
     console.log('Loading local model:', model_id);
     try {
         const check = typeof Gemma4ForConditionalGeneration;
-        self.postMessage({ type: 'progress', payload: { status: 'status', text: `Init (Class:${check})` } });
+        self.postMessage({ type: 'progress', payload: { status: 'status', text: `Init (Model:${model_id.split('/').pop()})` } });
 
         const progress_callback = (data) => {
             const now = Date.now();
@@ -63,7 +62,7 @@ async function init() {
 self.onmessage = async (e) => {
     const { type, payload } = e.data;
     if (type === 'init') {
-        await init();
+        await init(payload?.modelId);
     } else if (type === 'generate') {
         const { images, promptText, history, characterProfile } = payload;
         try {
