@@ -155,22 +155,22 @@
   <script>
     const JOBS = [
       "男子大学生", "女子高生", "マセた小学生", "会社員", "主婦", "プロゲーマー", "AIの妖精", "エンジニア", "隠居した老人",
-      "メン地下アイドル", "崖っぷちYouTuber", "異世界から来た騎士", "自称・魔導師", "深夜テンションのプログラマー", 
-      "宇宙から来た視察員", "記憶喪失の旅人", "恋に落ちたばかりの乙女", "自意識過剰な詩人", "敏腕刑事", "謎の占い師", 
+      "メン地下アイドル", "崖っぷちYouTuber", "異世界から来た騎士", "自称・魔導師", "深夜テンションのプログラマー",
+      "宇宙から来た視察員", "記憶喪失の旅人", "恋に落ちたばかりの乙女", "自意識過剰な詩人", "敏腕刑事", "謎の占い師",
       "転生したスライム", "窓際族のサラリーマン", "意識高い系起業家", "借金まみれのギャンブラー"
     ];
     const PERSONALITIES = [
       "無気力な", "超ポジティブな", "かなりの毒舌家な", "めちゃくちゃ丁寧な", "常にテンションが高い", "中二病な", "心配性な", "好奇心旺盛な",
-      "ツンデレな", "ギャル気質な", "古風な武士言葉の", "極低血圧な", "常に喧嘩腰の", "悟りすぎた", "語彙力が死んでいる", "理屈っぽい", 
+      "ツンデレな", "ギャル気質な", "古風な武士言葉の", "極低血圧な", "常に喧嘩腰の", "悟りすぎた", "語彙力が死んでいる", "理屈っぽい",
       "ナルシストな", "メンヘラ気味な", "腰が低すぎる", "上から目線の"
     ];
     const MOODS = [
       "暇を持て余している", "お腹が空いている", "眠たそうな", "悟りを開いている", "何かを探している", "イライラしている",
-      "宝くじに当たったかのような", "絶望の淵にいる", "ゾーンに入っている", "猛烈に腹痛に襲われている", "自分がAIだと疑っている", 
+      "宝くじに当たったかのような", "絶望の淵にいる", "ゾーンに入っている", "猛烈に腹痛に襲われている", "自分がAIだと疑っている",
       "世界を滅ぼしたい", "新しい恋をしたい", "明日から本気出したい", "前世を思い出しかけている"
     ];
     const MANNERISMS = [
-      "語尾に『～じゃ』をつける", "ネットスラング（w, 草, 乙など）を多用する", "常にカタカナ英語を混ぜる", "独り言が漏れているような口調", 
+      "語尾に『～じゃ』をつける", "ネットスラング（w, 草, 乙など）を多用する", "常にカタカナ英語を混ぜる", "独り言が漏れているような口調",
       "『……ッ！』と溜めることが多い", "丁寧すぎて逆に失礼な敬語", "ギャル語（まじ、尊い、～かよなど）で話す", "古風な言葉遣い（貴殿、然様か、候など）",
       "三点リーダー（…）を多用する", "『ふふ、』と不敵に笑う", "倒置法を使いすぎる", "専門用語を無理やり使いたがる"
     ];
@@ -180,7 +180,7 @@
       const personality = PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
       const mood = MOODS[Math.floor(Math.random() * MOODS.length)];
       const mannerism = MANNERISMS[Math.floor(Math.random() * MANNERISMS.length)];
-      
+
       return {
         name: `${personality}${job}`,
         profile: `【性格】${personality} 【立場】${job} 【今の気分】${mood} 【口癖/特徴】${mannerism}`
@@ -248,13 +248,13 @@
           document.getElementById('status').textContent = 'AI System Active';
           updateStatus('AIアクティブ（解析中）');
           const splash = document.getElementById('splash');
-          
+
           // キャラクター紹介を表示してから隠す
           const statusEl = document.getElementById('load-status');
           if (statusEl) {
             statusEl.style.color = '#00d2ff';
             statusEl.textContent = "参加メンバーを表示中...";
-            
+
             setTimeout(() => {
               statusEl.textContent = activeCharacters.map(c => c.name).join('、');
               statusEl.style.fontSize = '12px';
@@ -262,7 +262,7 @@
               statusEl.style.height = 'auto';
             }, 1000);
           }
-          
+
           setTimeout(() => {
             splash.classList.add('hidden');
           }, 5000);
@@ -277,7 +277,7 @@
           isProcessing = false;
           if (inferenceTimeout) clearTimeout(inferenceTimeout);
           updateStatus('AIアクティブ（解析中）');
-          
+
           let text = payload.text;
           if (!text || text.length < 2) {
             text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
@@ -309,7 +309,7 @@
 
     function showComment(name, text) {
       const isSystem = name === "システム" || name === "エラー";
-      const fullText = isSystem ? text : `${name}「${text}」`;
+      const fullText = text;
       const el = document.createElement('div');
       el.className = 'comment';
       el.textContent = fullText;
@@ -385,7 +385,7 @@
               "この画面を見て、ふと思ったことを口に出してください。"
             ];
             const basePrompt = promptVariations[Math.floor(Math.random() * promptVariations.length)];
-            
+
             const isDescription = Math.random() < 0.01;
             const promptText = isDescription
               ? "現在の画面に何が映っているか、口語調で短く説明してください。"
