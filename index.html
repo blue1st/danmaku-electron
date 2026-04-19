@@ -207,6 +207,13 @@
       const modelId = config.modelType === 'E4B' 
         ? 'onnx-community/gemma-4-E4B-it-ONNX' 
         : 'onnx-community/gemma-4-E2B-it-ONNX';
+      
+      const sizeText = config.modelType === 'E4B' ? '約4GB' : '約2GB';
+      const instructionEl = document.querySelector('.instruction p:nth-child(2)');
+      if (instructionEl) {
+        instructionEl.innerHTML = `モデル（${sizeText}）の初回ロードが完了するまでお待ちください。<br>完了後、自動的にこの画面は消え、画面にコメントが流れ始めます。`;
+      }
+
       console.log('Initializing with model:', modelId);
       initWorker(modelId);
     });
