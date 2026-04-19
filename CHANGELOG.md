@@ -1,5 +1,12 @@
 
 
+# [1.2.0](https://github.com/blue1st/danmaku-electron/compare/v1.1.0...v1.2.0) (2026-04-19)
+
+
+### Features
+
+* add application icon and update build configuration for cross-platform support ([a512289](https://github.com/blue1st/danmaku-electron/commit/a512289e61d4b6cb78ca6b983fe73150793cfc25))
+
 # [1.1.0](https://github.com/blue1st/danmaku-electron/compare/v1.0.2...v1.1.0) (2026-04-19)
 
 
