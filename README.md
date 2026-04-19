@@ -1,69 +1,67 @@
-# Danmaku Electron
+# Danmaku Electron (Gemma Live)
 
 ## 概要
-タスクトレイに常駐し、クリックで表示/非表示を切り替えられる **透過ウィンドウ** 上で文字列が左から右へ流れる（マリオネット風）デモアプリです。\
-- 常に前面に固定 (`alwaysOnTop`)
-- 背景が透過、他のウインドウが見える
-- macOS (Apple Silicon) 用 DMG パッケージをビルド可能
+デスクトップ画面をAIがリアルタイムに実況・状況解説する、弾幕風デスクトップ常駐アプリです。
+最先端のマルチモーダルAI「Gemma 4」を WebGPU を活用して端末ローカルで動作させ、画面キャプチャに基づいた生々しいリアクションを画面上にオーバーレイ表示します。
+
+- **100% ローカル実行**: クラウドAPIを使わず、プライバシーを保ちながら高速に推論。
+- **マルチキャラクター**: 起動ごとにランダムに選ばれる6〜12人の個性豊かなキャラクターが、それぞれの視点でボヤいたり驚いたりします。
+- **高機能システムトレイ**: 画面の表示/非表示、解析頻度の調整、AIモデルの切り替え（E2B / E4B）を直感的に行えます。
+- **透過・クリック透過**: 作業を邪魔しない透明なレイヤーで動作します。
+
+## 主要機能
+- **リアルタイム画面実況**: 画面の変化を捉えて、キャラクターになりきってコメントを生成。
+- **選べるAIモデル**:
+  - **Gemma 4 E2B**: 軽量・高速。省リソース環境向け。
+  - **Gemma 4 E4B**: 高精度・多弁。高い表現力を求める環境向け。
+- **柔軟な解析設定**: 推論の間隔（5秒〜40秒）を負荷に合わせて手元で調整可能。
+- **リッチなスプラッシュ画面**: モデルのダウンロードやコンパイルの進捗をビジュアル表示。
 
 ## 必要環境
-- Node.js **v18 以上**（推奨 LTS）
-- npm（Node に同梱）
-- macOS 12.0 以降 (Apple Silicon) – DMG ビルド時に使用
+- **OS**: macOS (Apple Silicon 推奨) / Windows (WebGPU 対応環境)
+- **GPU**: WebGPU 対応の GPU（モデル実行に数GBのVRAMを消費します）
+- **Node.js**: v18 以上
 
 ## インストール手順
 ```bash
 git clone <リポジトリURL>
 cd danmaku-electron
-npm install   # electron と electron‑builder がインストールされます
+npm install
 ```
 
-## 開発・実行方法
+## 使い方
 ### アプリ起動
 ```bash
 npm start
 ```
-タスクトレイにアイコンが表示され、クリックでウィンドウの表示/非表示を切り替えられます。
 
-### カスタマイズ例
-- **ウィンドウサイズ・位置**: `main.js` の `BrowserWindow` オプション (`width`, `height`, `x`, `y`) を変更
-- **スクロール速度**: `index.html` の CSS アニメーション `animation-duration` を調整
-- **表示文字列**: `index.html` の `#marquee` 内容を編集、もしくは IPC で動的に送信可能
+1. 起動するとシステムトレイにアイコンが表示されます。
+2. 初回起動時は AI モデル（約 2GB〜4GB）のダウンロードが行われます。
+3. ロード完了後、自動的に画面キャプチャの許可を求められます。許可すると実況が開始されます。
 
-## macOS (Apple Silicon) 用 DMG ビルド手順
+### トレイメニュー
+- **画面を表示**: チェックを入れるとコメントが流れます。
+- **解析頻度**: AI がどのくらいの頻度で画面を見るかを設定します。
+- **AI モデル**: E2B (軽量) と E4B (高精度) を切り替えます（変更後、自動で再起動します）。
+
+## ビルド・リリース
+### パッケージ作成
 ```bash
-npm run dist   # electron‑builder が mac 用 .dmg を出力します
+npm run dist
 ```
-ビルド結果は `dist/` ディレクトリに `danmaku-electron-1.0.0-arm64.dmg` として生成されます。DMG を開くとアプリを `/Applications` へドラッグできます。
+`dist/` ディレクトリに各プラットフォーム用のインストーラーが生成されます。
 
-## Windows (amd64) 用インストーラビルド手順
+### リリース
 ```bash
-npm run dist   # electron‑builder が mac と windows の両方を出力します
+npm run release
 ```
-Windows 用は `dist/` に `DanmakuElectron Setup 1.0.0.exe`（NSIS インストーラ）が生成されます。実行するとインストールウィザードが表示され、任意のフォルダーへインストールできます。
+`release-it` によりバージョン更新、タグ付け、GitHub Release 作成を自動行います。
 
-## リリース手順
-`release-it` を使用して、バージョニング、CHANGELOG の更新、Git タグの作成、GitHub リリースの作成を自動化しています。
-
-1. **GitHub Token の設定** (初回のみ):
-   GitHub リリースを自動作成するために、`GITHUB_TOKEN` を環境変数に設定してください。
-2. **リリース実行**:
-   ```bash
-   npm run release
-   ```
-   対話形式でバージョンの選択（patch/minor/major）や GitHub リリースの作成確認が行われます。
-
-## ファイル構成
-```
-├─ main.js          # メインプロセス（ウィンドウ・トレイ設定）
-├─ index.html       # レンダラ側 UI と文字列スクロール実装
-├─ tray.png         # タスクトレイアイコン (16×16 推奨)
-├─ comments.txt     # デモ用コメント集（開発者向け）
-└─ package.json    # スクリプト・ビルド設定
-```
+## 技術スタック
+- **Frontend**: HTML5 / CSS3 / JavaScript
+- **Backend**: Electron
+- **AI Inference**: Transformers.js (v4+) + WebGPU
+- **Model**: Google Gemma 4 (E2B / E4B ONNX)
 
 ## ライセンス
-MIT License（`LICENSE` が存在すればそちらを参照）。必要に応じて `package.json` の `license` フィールドを書き換えてください。
-
----
-質問や要望があれば **Issues** か Pull Request でお気軽にどうぞ！
+MIT License
