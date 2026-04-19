@@ -79,7 +79,7 @@ self.onmessage = async (e) => {
 
             // チャットテンプレートの構築
             const content = images.map(() => ({ type: 'image' }));
-            content.push({ type: 'text', text: promptText + "短い一言で実況してください。" });
+            content.push({ type: 'text', text: promptText });
             
             const messages = [{ role: 'user', content }];
             
