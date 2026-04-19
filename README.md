@@ -30,8 +30,10 @@
 ## インストール手順
 
 ### Homebrew (macOS)
+
 ```bash
-brew install blue1st/taps/danmaku-electron
+brew tap blue1st/taps
+brew install --cask danmaku-electron
 ```
 
 ### Windows
