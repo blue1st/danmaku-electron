@@ -17,7 +17,7 @@
     }
   },
   "hooks": {
-    "before:init": ["npm run dist"],
+    "after:bump": ["npm run dist"],
     "after:git:release": ["bash scripts/update-homebrew.sh ${version}"]
   }
 }
