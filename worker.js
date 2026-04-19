@@ -13,24 +13,46 @@ let model;
 let processor;
 const model_id = 'onnx-community/gemma-4-E2B-it-ONNX';
 
+// 進捗の throttled update 用
+let lastUpdateTime = 0;
+const UPDATE_INTERVAL = 500; // 0.5秒おきにトレイを更新
+
 async function init() {
     console.log('Loading local model:', model_id);
     try {
+        const check = typeof Gemma4ForConditionalGeneration;
+        self.postMessage({ type: 'progress', payload: { status: 'status', text: `Init (Class:${check})` } });
+
         const progress_callback = (data) => {
+            const now = Date.now();
+            if (data.status === 'progress') {
+                if (now - lastUpdateTime < UPDATE_INTERVAL) return;
+                lastUpdateTime = now;
+            }
             self.postMessage({ type: 'progress', payload: data });
         };
 
-        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Loading processor...' } });
-        processor = await AutoProcessor.from_pretrained(model_id);
+        // Cacheを完全に無効化してネットワークからリトライ
+        env.useBrowserCache = false;
+
+        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 1: Fetching Configs...' } });
+        processor = await AutoProcessor.from_pretrained(model_id, { revision: 'main' });
         
-        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Loading model (q4f16)...' } });
+        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 2: Checking WebGPU...' } });
+        if (!navigator.gpu) {
+            throw new Error('WebGPU is not supported');
+        }
+
+        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 3: Loading Weights...' } });
         model = await Gemma4ForConditionalGeneration.from_pretrained(model_id, {
             dtype: 'q4f16',
             device: 'webgpu',
+            revision: 'main',
             progress_callback
         });
         
-        console.log('Model loaded via Gemma4ForConditionalGeneration (LOCAL)!');
+        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 4: Compiling...' } });
+        console.log('Model loaded successful!');
         self.postMessage({ type: 'ready' });
     } catch (err) {
         console.error('Initialization failed:', err);
@@ -71,8 +93,6 @@ self.onmessage = async (e) => {
                 const placeholders = imageTag.repeat(images.length);
                 prompt = prompt.replace(/(<start_of_turn>user\s*)/, `$1\n${placeholders}\n`);
             }
-            
-            console.log('Final prompt:', prompt);
             
             const inputs = await processor(prompt, rawImages);
             

@@ -141,7 +141,9 @@
                 const statusEl = document.getElementById('load-status');
                 if (payload.status === 'progress') {
                     const percent = payload.progress.toFixed(1);
-                    statusEl.textContent = `Downloading: ${percent}% (${payload.file})`;
+                    const text = `DL: ${percent}% (${payload.file})`;
+                    statusEl.textContent = text;
+                    updateStatus(text);
                 } else if (payload.status === 'initiate') {
                     statusEl.textContent = `Initiating: ${payload.file}...`;
                 } else if (payload.status === 'done') {
