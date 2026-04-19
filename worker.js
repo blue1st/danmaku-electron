@@ -65,9 +65,10 @@ self.onmessage = async (e) => {
     if (type === 'init') {
         await init();
     } else if (type === 'generate') {
-        const { images, promptText } = payload;
+        const { images, promptText, history } = payload;
         try {
             console.log('Generating comment with', images.length, 'images...');
+            
             // ImageBitmapをRawImageに変換
             const rawImages = await Promise.all(images.map(async (img) => {
                 const canvas = new OffscreenCanvas(img.width, img.height);
@@ -78,8 +79,13 @@ self.onmessage = async (e) => {
             }));
 
             // チャットテンプレートの構築
+            let fullPrompt = promptText;
+            if (history && history.length > 0) {
+                fullPrompt += `\n（直近のあなたの発言: ${history.join(', ')}）\nこれらとは違う、今の画面に合わせた新しいリアクションをお願いします。`;
+            }
+
             const content = images.map(() => ({ type: 'image' }));
-            content.push({ type: 'text', text: promptText });
+            content.push({ type: 'text', text: fullPrompt });
             
             const messages = [{ role: 'user', content }];
             

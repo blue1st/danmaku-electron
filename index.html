@@ -129,6 +129,8 @@
     let isProcessing = false;
     let inferenceTimeout = null;
     let frameBuffer = [];
+    const commentHistory = [];
+    const MAX_HISTORY = 5;
     const MAX_FRAMES = 1;
     const CAPTURE_INTERVAL = 3000; // 3秒ごとにキャプチャ
     const INFERENCE_INTERVAL = 10000; // 10秒ごとに推論
@@ -189,6 +191,10 @@
                 let text = payload.text;
                 if (!text || text.length < 2) {
                     text = fallbackComments[Math.floor(Math.random() * fallbackComments.length)];
+                } else {
+                    // 履歴に追加
+                    commentHistory.push(text);
+                    if (commentHistory.length > MAX_HISTORY) commentHistory.shift();
                 }
                 showComment(char, text);
             } else if (type === 'error') {
@@ -280,11 +286,18 @@
                     updateStatus(statusText);
                     document.getElementById('status').textContent = `AI Status: ${statusText}`;
                     
+                    // 30%の確率でお堅い説明、70%の確率で素直な感想にする
+                    const isDescription = Math.random() < 0.3;
+                    const promptText = isDescription 
+                        ? "現在の画面に何が映っているか、客観的に短く説明してください。" 
+                        : "画面を見て、素直な感想を一言でつぶやいてください。説明は不要です。リアクションや心の声を短くお願いします。";
+
                     worker.postMessage({
                         type: 'generate',
                         payload: {
                             images: snapshots,
-                            promptText: "画面を見て、素直な感想を一言でつぶやいてください。説明は不要です。リアクションや心の声を短くお願いします。"
+                            promptText: promptText,
+                            history: commentHistory
                         }
                     }, snapshots);
                     
