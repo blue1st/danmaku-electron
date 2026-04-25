@@ -1,5 +1,7 @@
 
 
+## [1.4.1](https://github.com/blue1st/danmaku-electron/compare/v1.4.0...v1.4.1) (2026-04-25)
+
 # [1.4.0](https://github.com/blue1st/danmaku-electron/compare/v1.3.2...v1.4.0) (2026-04-25)
 
 
