@@ -1,16 +1,23 @@
-// Electron Worker (nodeIntegrationInWorker) では require() が使われるため、
-// @huggingface/transformers の exports.node 条件にマッチして transformers.node.cjs が読み込まれる。
-// transformers.node.cjs はトップレベルで require('sharp') を実行するため、
-// Windows環境でネイティブバイナリが不一致の場合にクラッシュする。
-// 解決策: sharp を使わない Web 版バンドル (dist/transformers.js) を直接読み込む。
-const _path = require('path');
-const _distDir = _path.dirname(require.resolve('@huggingface/transformers'));
+// Electron Worker (nodeIntegrationInWorker) で @huggingface/transformers を使う際の問題:
+// Node 版バンドル (transformers.node.cjs) はトップレベルで require('sharp') を実行する。
+// sharp はネイティブモジュールで、クロスビルド時にバイナリ不一致でクラッシュする。
+//
+// 解決策: require('sharp') を空オブジェクトを返すようインターセプトする。
+// Electron Worker は IS_WEB_ENV=true (DedicatedWorkerGlobalScope) と判定されるため、
+// 画像処理には OffscreenCanvas が使われ、sharp は実際には呼ばれない。
+const Module = require('module');
+const _originalRequire = Module.prototype.require;
+Module.prototype.require = function (id) {
+    if (id === 'sharp') return {}; // ネイティブモジュールをロードせず空オブジェクトを返す
+    return _originalRequire.apply(this, arguments);
+};
+
 const {
     env,
     AutoProcessor,
     Gemma4ForConditionalGeneration,
     RawImage
-} = require(_path.join(_distDir, 'transformers.js'));
+} = require('@huggingface/transformers');
 
 let model;
 let processor;
@@ -24,16 +31,21 @@ async function init(payload) {
 
     // 環境設定の初期化
     env.allowLocalModels = false;
+    env.useBrowserCache = false;
 
-    // Web版バンドル (dist/transformers.js) は node:fs がスタブされているため
-    // ファイルシステムキャッシュは使えない。
-    // 代わりに Electron Worker で利用可能な Cache API (Chromium 内蔵) を使用する。
-    env.useBrowserCache = true;
-    env.useFSCache = false;
+    // Node版バンドルは fs が使えるので、ファイルシステムキャッシュを活用
+    if (userDataPath) {
+        const path = require('path');
+        const cachePath = path.join(userDataPath, 'models-cache');
+        console.log('Setting cache path:', cachePath);
+        env.cacheDir = cachePath;
+    }
+
+    let currentStep = 'Init';
+    let fileCount = 0;
 
     console.log('Loading local model:', model_id);
     try {
-        const check = typeof Gemma4ForConditionalGeneration;
         self.postMessage({ type: 'progress', payload: { status: 'status', text: `Init (Model:${model_id.split('/').pop()})` } });
 
         const progress_callback = (data) => {
@@ -41,31 +53,85 @@ async function init(payload) {
             if (data.status === 'progress') {
                 if (now - lastUpdateTime < UPDATE_INTERVAL) return;
                 lastUpdateTime = now;
+                // ステップ名を含めた進捗表示
+                const percent = data.progress?.toFixed(1) ?? '?';
+                const text = `${currentStep}: DL ${percent}% (${data.file})`;
+                self.postMessage({ type: 'progress', payload: { ...data, status: 'progress', text } });
+            } else if (data.status === 'initiate') {
+                fileCount++;
+                const text = `${currentStep}: Starting #${fileCount} ${data.file}...`;
+                console.log(text);
+                self.postMessage({ type: 'progress', payload: { status: 'status', text } });
+            } else if (data.status === 'done') {
+                const text = `${currentStep}: Loaded ${data.file}`;
+                console.log(text);
+                self.postMessage({ type: 'progress', payload: { status: 'status', text } });
+            } else {
+                self.postMessage({ type: 'progress', payload: data });
             }
-            self.postMessage({ type: 'progress', payload: data });
         };
 
-        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 1: Fetching Configs...' } });
+        // Step 1: Processor (tokenizer, configs)
+        currentStep = 'Step 1/4 Config';
+        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 1/4: Fetching Configs...' } });
         processor = await AutoProcessor.from_pretrained(model_id, {
             revision: 'main',
             progress_callback
         });
+        console.log('Processor loaded.');
 
-        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 2: Checking WebGPU...' } });
+        // Step 2: WebGPU チェック（アダプタの実際の取得まで確認）
+        currentStep = 'Step 2/4 WebGPU';
+        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 2/4: Checking WebGPU...' } });
+
+        let useDevice = 'webgpu';
         if (!navigator.gpu) {
-            throw new Error('WebGPU is not supported');
+            console.warn('WebGPU API not available, falling back to WASM (CPU).');
+            useDevice = 'wasm';
+            self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 2/4: WebGPU未対応 → CPU(WASM)モードで起動' } });
+        } else {
+            try {
+                const adapter = await navigator.gpu.requestAdapter();
+                if (!adapter) {
+                    throw new Error('No WebGPU adapter found');
+                }
+                const info = adapter.info || {};
+                console.log('WebGPU Adapter:', info.vendor, info.architecture, info.description);
+                self.postMessage({ type: 'progress', payload: { status: 'status', text: `Step 2/4: WebGPU OK (${info.vendor || 'GPU'})` } });
+            } catch (gpuErr) {
+                console.warn('WebGPU adapter failed:', gpuErr.message, '→ falling back to WASM');
+                useDevice = 'wasm';
+                self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 2/4: GPU取得失敗 → CPU(WASM)モードで起動' } });
+            }
         }
 
-        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 3: Loading Weights...' } });
-        model = await Gemma4ForConditionalGeneration.from_pretrained(model_id, {
-            dtype: 'q4f16',
-            device: 'webgpu',
-            revision: 'main',
-            progress_callback
-        });
+        // Step 3: モデル重みのダウンロード + ロード
+        currentStep = 'Step 3/4 Weights';
+        fileCount = 0;
+        self.postMessage({ type: 'progress', payload: { status: 'status', text: `Step 3/4: Loading Weights (${useDevice})...` } });
 
-        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 4: Compiling...' } });
-        console.log('Model loaded successful!');
+        // ハートビート: 長時間無音でも「処理中」を示す
+        let heartbeatCount = 0;
+        const heartbeat = setInterval(() => {
+            heartbeatCount++;
+            const dots = '.'.repeat((heartbeatCount % 3) + 1);
+            self.postMessage({ type: 'progress', payload: { status: 'status', text: `Step 3/4: Loading${dots} (${useDevice}, ${heartbeatCount * 5}s elapsed)` } });
+        }, 5000);
+
+        try {
+            model = await Gemma4ForConditionalGeneration.from_pretrained(model_id, {
+                dtype: 'q4f16',
+                device: useDevice,
+                revision: 'main',
+                progress_callback
+            });
+        } finally {
+            clearInterval(heartbeat);
+        }
+
+        // Step 4: 完了
+        self.postMessage({ type: 'progress', payload: { status: 'status', text: 'Step 4/4: Ready!' } });
+        console.log('Model loaded successfully!');
         self.postMessage({ type: 'ready' });
     } catch (err) {
         console.error('Initialization failed:', err);
