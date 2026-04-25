@@ -1,11 +1,15 @@
 // WebGPUを有効化するための初期インポート（設定はinit内で行う）
 // Windows環境などでSharpのネイティブモジュールが読み込めない問題を回避するためのモック
+// MODULE_NOT_FOUND コードを付与することでtransformers.jsに「未インストール」と認識させ、
+// 安全なフォールバック（Jimp等）を使用させる
 try {
     const Module = require('module');
     const originalRequire = Module.prototype.require;
-    Module.prototype.require = function (path) {
-        if (path === 'sharp') {
-            throw new Error('Sharp is disabled to avoid native module issues in Electron.');
+    Module.prototype.require = function (id) {
+        if (id === 'sharp') {
+            const err = new Error("Cannot find module 'sharp'");
+            err.code = 'MODULE_NOT_FOUND';
+            throw err;
         }
         return originalRequire.apply(this, arguments);
     };

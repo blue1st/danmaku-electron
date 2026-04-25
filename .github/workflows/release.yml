@@ -27,42 +27,36 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Build for the current OS (macOS or Windows)
       # Build macOS binary with arm64 architecture
       - name: Build binaries (macOS)
         if: matrix.os == 'macos'
-        run: |
-          npm run dist -- --mac --arm64
+        run: npm run dist -- --mac --arm64
         env:
           CI: true
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build Windows binary with x64 architecture
+      # Build Windows binary with x64 architecture (cross-compile on macOS)
       - name: Build binaries (Windows)
         if: matrix.os == 'windows'
-        shell: pwsh
-        run: |
-          npm run dist -- --win --x64
+        run: npm run dist -- --win --x64
         env:
           CI: true
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Upload artifacts for later release step – OS 別に適切なファイルだけを対象とする
+      # Upload artifacts – artifactName で指定した命名パターンに合わせる
       - name: Upload macOS artifact
         if: matrix.os == 'macos'
         uses: actions/upload-artifact@v4
         with:
           name: macos-artifacts
-          # macOS では dmg のみをアップロード
-          path: dist/*.dmg
+          path: dist/danmaku-electron-*.dmg
 
       - name: Upload Windows artifact
         if: matrix.os == 'windows'
         uses: actions/upload-artifact@v4
         with:
           name: windows-artifacts
-          # Setup 用 exe のみをアップロード（blockmap 等は除外）
-          path: dist/*Setup*.exe
+          path: dist/DanmakuElectron-Setup-*.exe
 
   release:
     needs: build
@@ -76,6 +70,9 @@ jobs:
         with:
           merge-multiple: true
           path: ./release-assets
+
+      - name: List release assets
+        run: ls -la ./release-assets/
 
       - name: Create GitHub Release
         id: create_release
