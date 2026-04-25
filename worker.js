@@ -1,28 +1,16 @@
-// WebGPUを有効化するための初期インポート（設定はinit内で行う）
-// Windows環境などでSharpのネイティブモジュールが読み込めない問題を回避するためのモック
-// MODULE_NOT_FOUND コードを付与することでtransformers.jsに「未インストール」と認識させ、
-// 安全なフォールバック（Jimp等）を使用させる
-try {
-    const Module = require('module');
-    const originalRequire = Module.prototype.require;
-    Module.prototype.require = function (id) {
-        if (id === 'sharp') {
-            const err = new Error("Cannot find module 'sharp'");
-            err.code = 'MODULE_NOT_FOUND';
-            throw err;
-        }
-        return originalRequire.apply(this, arguments);
-    };
-} catch (e) {
-    console.warn('Failed to mock sharp:', e);
-}
-
+// Electron Worker (nodeIntegrationInWorker) では require() が使われるため、
+// @huggingface/transformers の exports.node 条件にマッチして transformers.node.cjs が読み込まれる。
+// transformers.node.cjs はトップレベルで require('sharp') を実行するため、
+// Windows環境でネイティブバイナリが不一致の場合にクラッシュする。
+// 解決策: sharp を使わない Web 版バンドル (dist/transformers.js) を直接読み込む。
+const _path = require('path');
+const _distDir = _path.dirname(require.resolve('@huggingface/transformers'));
 const {
     env,
     AutoProcessor,
     Gemma4ForConditionalGeneration,
     RawImage
-} = require('@huggingface/transformers');
+} = require(_path.join(_distDir, 'transformers.js'));
 
 let model;
 let processor;
