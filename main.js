@@ -7,7 +7,12 @@ app.commandLine.appendSwitch('enable-unsafe-webgpu');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('force_high_performance_gpu');
 // Windows/LinuxでのVulkan安定化などのためだがmacOSでも悪影響は少ない
-app.commandLine.appendSwitch('enable-features', 'Vulkan,UseSkiaRenderer');
+// ※WindowsでVulkanを有効にすると透過ウィンドウ（transparent: true）が黒背景になる問題があるため除外
+if (process.platform === 'win32') {
+  app.commandLine.appendSwitch('enable-features', 'UseSkiaRenderer');
+} else {
+  app.commandLine.appendSwitch('enable-features', 'Vulkan,UseSkiaRenderer');
+}
 
 const configPath = path.join(app.getPath('userData'), 'config.json');
 
@@ -114,10 +119,13 @@ function createWindow() {
     width: winWidth,
     height: winHeight,
     transparent: true,
-    backgroundColor: '#00000000', // macOS 透過ウィンドウの安定化
+    ...(process.platform !== 'win32' ? { backgroundColor: '#00000000' } : {}), // macOS 透過ウィンドウの安定化
     frame: false,
     alwaysOnTop: true,
     skipTaskbar: true,
+    show: false, // 準備完了まで非表示にして黒背景化を防ぐ
+    resizable: false, // Windowsで透過ウィンドウを安定させるため
+    maximizable: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -148,6 +156,7 @@ function createWindow() {
   mainWin.once('ready-to-show', () => {
     if (mainWin) {
       mainWin.setIgnoreMouseEvents(true, { forward: true });
+      mainWin.showInactive(); // フォーカスを奪わずに表示
     }
   });
 
