@@ -24,16 +24,12 @@ async function init(payload) {
 
     // 環境設定の初期化
     env.allowLocalModels = false;
-    env.useBrowserCache = false; // Electronではディスクキャッシュ（userData）を優先
 
-    if (userDataPath) {
-        const path = require('path');
-        const cachePath = path.join(userDataPath, 'models-cache');
-        console.log('Setting cache path:', cachePath);
-        env.cacheDir = cachePath;
-        // Node環境でのローカルパスも一応設定
-        env.localModelPath = cachePath;
-    }
+    // Web版バンドル (dist/transformers.js) は node:fs がスタブされているため
+    // ファイルシステムキャッシュは使えない。
+    // 代わりに Electron Worker で利用可能な Cache API (Chromium 内蔵) を使用する。
+    env.useBrowserCache = true;
+    env.useFSCache = false;
 
     console.log('Loading local model:', model_id);
     try {
