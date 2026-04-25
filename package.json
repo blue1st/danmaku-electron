@@ -1,28 +1,6 @@
 {
   "name": "danmaku-electron",
   "version": "1.4.0",
-  "build": {
-    "appId": "com.example.danmaku",
-    "mac": {
-      "identity": null,
-      "target": [
-        "dmg"
-      ]
-    },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ]
-    },
-    "directories": {
-      "output": "dist"
-    }
-  },
   "main": "main.js",
   "scripts": {
     "start": "electron .",
