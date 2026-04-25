@@ -1,5 +1,12 @@
 
 
+## [1.4.6](https://github.com/blue1st/danmaku-electron/compare/v1.4.5...v1.4.6) (2026-04-25)
+
+
+### Bug Fixes
+
+* update main process logic in main.js ([36ac4fe](https://github.com/blue1st/danmaku-electron/commit/36ac4fe349482ed45d631bfe0b02d745891ecbeb))
+
 ## [1.4.5](https://github.com/blue1st/danmaku-electron/compare/v1.4.4...v1.4.5) (2026-04-25)
 
 ## [1.4.4](https://github.com/blue1st/danmaku-electron/compare/v1.4.3...v1.4.4) (2026-04-25)
