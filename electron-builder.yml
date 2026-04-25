@@ -5,6 +5,7 @@ directories:
 files:
   - main.js
   - index.html
+  - worker.js
   - tray.png
 win:
   target:

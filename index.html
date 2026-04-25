@@ -245,6 +245,15 @@
 
     function initWorker(modelId, userDataPath) {
       worker = new Worker('worker.js');
+      worker.onerror = (err) => {
+        console.error('Worker Script Error:', err);
+        const statusEl = document.getElementById('load-status');
+        if (statusEl) {
+          statusEl.textContent = `Worker Error: ${err.message || 'Check if worker.js is missing'}`;
+          statusEl.style.color = '#ff6b6b';
+        }
+        updateStatus(`Worker Error`);
+      };
       worker.onmessage = (e) => {
         const { type, payload, error } = e.data;
         if (type === 'progress') {

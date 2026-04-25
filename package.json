@@ -46,6 +46,7 @@
   "files": [
     "main.js",
     "index.html",
+    "worker.js",
     "tray.png",
     "assets/icon.png"
   ],
