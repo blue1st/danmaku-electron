@@ -1,4 +1,18 @@
 // WebGPUを有効化するための初期インポート（設定はinit内で行う）
+// Windows環境などでSharpのネイティブモジュールが読み込めない問題を回避するためのモック
+try {
+    const Module = require('module');
+    const originalRequire = Module.prototype.require;
+    Module.prototype.require = function (path) {
+        if (path === 'sharp') {
+            throw new Error('Sharp is disabled to avoid native module issues in Electron.');
+        }
+        return originalRequire.apply(this, arguments);
+    };
+} catch (e) {
+    console.warn('Failed to mock sharp:', e);
+}
+
 const {
     env,
     AutoProcessor,
