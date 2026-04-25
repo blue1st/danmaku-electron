@@ -1,5 +1,12 @@
 
 
+# [1.4.0](https://github.com/blue1st/danmaku-electron/compare/v1.3.2...v1.4.0) (2026-04-25)
+
+
+### Features
+
+* include worker.js in build configuration for electron-builder ([2c1b47c](https://github.com/blue1st/danmaku-electron/commit/2c1b47ce23adc0f2a58c61465e2fb177cd1df190))
+
 ## [1.3.2](https://github.com/blue1st/danmaku-electron/compare/v1.3.1...v1.3.2) (2026-04-19)
 
 ## [1.3.1](https://github.com/blue1st/danmaku-electron/compare/v1.3.0...v1.3.1) (2026-04-19)
