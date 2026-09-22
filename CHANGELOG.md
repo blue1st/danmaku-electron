@@ -1,5 +1,12 @@
 
 
+## [1.4.7](https://github.com/blue1st/danmaku-electron/compare/v1.4.6...v1.4.7) (2026-09-22)
+
+
+### Bug Fixes
+
+* **homebrew:** use postflight_steps instead of deprecated postflight ([7c95eef](https://github.com/blue1st/danmaku-electron/commit/7c95eef7d317d822df65e1ad6838558bc5b04cba))
+
 ## [1.4.6](https://github.com/blue1st/danmaku-electron/compare/v1.4.5...v1.4.6) (2026-04-25)
 
 
