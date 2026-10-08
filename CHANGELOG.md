@@ -1,5 +1,12 @@
 
 
+## [1.4.9](https://github.com/blue1st/danmaku-electron/compare/v1.4.8...v1.4.9) (2026-10-08)
+
+
+### Bug Fixes
+
+* **ci:** fix authentication in homebrew update script ([c12b285](https://github.com/blue1st/danmaku-electron/commit/c12b2854003e36a8fbbb4a2dc9c4f41ffb66bac4))
+
 ## [1.4.8](https://github.com/blue1st/danmaku-electron/compare/v1.4.7...v1.4.8) (2026-10-08)
 
 
