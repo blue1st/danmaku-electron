@@ -43,10 +43,10 @@ cask "danmaku-electron" do
   # Only support Apple Silicon (based on release assets)
   depends_on arch: :arm64
 
-  postflight_steps do
-    run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{appdir}/DanmakuElectron.app"]
-    run "/usr/bin/codesign", args: ["--force", "--deep", "--sign", "-", "#{appdir}/DanmakuElectron.app"]
-  end
+  caveats <<~EOS
+    Danmaku Electron is not notarized. If macOS blocks it from running, execute:
+      xattr -cr "/Applications/DanmakuElectron.app"
+  EOS
 
   zap trash: [
     "~/Library/Application Support/DanmakuElectron",
