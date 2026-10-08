@@ -22,7 +22,7 @@ echo "Updating Homebrew Cask to version $VERSION with SHA256 $SHA256"
 
 # Tapリポジトリをテンポラリにクローン
 TMP_DIR=$(mktemp -d)
-git clone "https://${HOMEBREW_TAP_TOKEN}@github.com/blue1st/homebrew-taps.git" "$TMP_DIR"
+git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/blue1st/homebrew-taps.git" "$TMP_DIR"
 
 CASK_PATH="$TMP_DIR/Casks/danmaku-electron.rb"
 mkdir -p "$TMP_DIR/Casks"
