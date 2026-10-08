@@ -1,5 +1,12 @@
 
 
+## [1.4.8](https://github.com/blue1st/danmaku-electron/compare/v1.4.7...v1.4.8) (2026-10-08)
+
+
+### Bug Fixes
+
+* **homebrew:** replace postflight_steps with caveats ([f5f78fc](https://github.com/blue1st/danmaku-electron/commit/f5f78fc95dcf98d0814b07cb91554bdafd034a50))
+
 ## [1.4.7](https://github.com/blue1st/danmaku-electron/compare/v1.4.6...v1.4.7) (2026-09-22)
 
 
